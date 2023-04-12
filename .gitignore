@@ -1,0 +1,5 @@
+obj/
+.cache/
+.vscode/
+compile_commands.json
+cubegame

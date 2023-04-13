@@ -7,13 +7,14 @@ CXX_SOURCE_FILES=$(wildcard src/*.cpp)
 
 OBJECT_FILES=$(patsubst src/%.c, $(OBJ_DIR)/%.o, $(C_SOURCE_FILES))
 
-INCLUDE_FILES=$(wildcard include/*.h)
+INCLUDE_FILES=$(wildcard include/*.h) $(wildcard libs/stb/*.h)
 
-INCLUDE_PATHS=-I. -Iinclude
+# Include libs with -isystem to surpress our overzealous warnings
+INCLUDE_PATHS=-I. -Iinclude -isystem libs/stb
 
 CFLAGS=-g -std=c11 -fdiagnostics-color=always
 
-LDFLAGS=-lGL -lglfw -lGLEW -lcglm
+LDFLAGS=-lGL -lglfw -lGLEW -lcglm -lm
 
 WARN_FLAGS=-Wall -Wextra -Wpedantic -Werror -Wconversion
 
@@ -26,7 +27,7 @@ $(OBJ_DIR)/%.o: src/%.c $(INCLUDE_FILES)
 	$(CC) $(CFLAGS) $(WARN_FLAGS) $(INCLUDE_PATHS) -c -o $@ $<
 
 $(BIN_NAME): $(OBJECT_FILES) $(INCLUDE_FILES)
-	$(CXX) $(CXXFLAGS) $(WARN_FLAGS) $(INCLUDE_PATHS) -o $@ $(OBJECT_FILES) $(LDFLAGS)
+	$(CC) $(CXXFLAGS) $(WARN_FLAGS) $(INCLUDE_PATHS) -o $@ $(OBJECT_FILES) $(LDFLAGS)
 
 clean:
 	rm -f ./$(BIN_NAME)

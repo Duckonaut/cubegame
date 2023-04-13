@@ -7,6 +7,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 u8* read_file(const char* path, usize* size) {
     FILE* file = fopen(path, "rb");
     if (!file) {
@@ -44,4 +50,49 @@ u8* read_asset(const char* path, usize* size) {
 
 void free_file(u8* buffer) {
     free(buffer);
+}
+
+texture_t texture_load(const char* path) {
+    texture_t texture = {0};
+
+    u8* image_data = stbi_load(path, &texture.width, &texture.height, &texture.channels, 0);
+
+    if (!image_data) {
+        LOG_ERROR("Failed to load texture: %s\n", path);
+        return texture;
+    }
+
+    glGenTextures(1, &texture.id);
+    glBindTexture(GL_TEXTURE_2D, texture.id);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    if (texture.channels == 3) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture.width, texture.height, 0, GL_RGB, GL_UNSIGNED_BYTE, image_data);
+    } else if (texture.channels == 4) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.width, texture.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+    } else {
+        LOG_ERROR("Unsupported texture format: %s\n", path);
+        stbi_image_free(image_data);
+        texture.id = 0;
+        return texture;
+    }
+
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    stbi_image_free(image_data);
+
+    return texture;
+}
+
+void texture_free(texture_t* texture) {
+    glDeleteTextures(1, &texture->id);
+}
+
+void texture_bind(texture_t* texture, u32 slot) {
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(GL_TEXTURE_2D, texture->id);
 }

@@ -1,0 +1,4 @@
+#pragma once
+
+#define CHUNK_SIZE 16
+#define CHUNK_BLOCK_COUNT (CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE)

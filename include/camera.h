@@ -3,6 +3,7 @@
 #include "mesh.h"
 #include "shader.h"
 #include "types.h"
+#include "world.h"
 #include <cglm/types.h>
 
 typedef struct camera {
@@ -37,7 +38,7 @@ void camera_screen_to_world(
 );
 bool camera_pointed_block(
     camera_t* camera,
+    world_t* world,
     float range,
-    const mesh_instance_t* blocks,
     ivec3* position
 );

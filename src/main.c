@@ -6,6 +6,7 @@
 #include <cglm/types.h>
 #include <cglm/vec3.h>
 
+#include <stdlib.h>
 #include <time.h>
 
 #include "camera.h"
@@ -269,21 +270,6 @@ int main(void) {
 
     mesh_instance_t cube_skeleton_instance = mesh_instance_new(&cube_skeleton);
 
-    mesh_instance_t* cube_instances = malloc(sizeof(mesh_instance_t) * CHUNK_BLOCK_COUNT);
-
-    for (usize i = 0; i < CHUNK_BLOCK_COUNT; i++) {
-        cube_instances[i] = mesh_instance_new(&cube);
-
-        float x = (float)(i % CHUNK_SIZE);
-        float y = (float)(i32)((i % (CHUNK_SIZE * CHUNK_SIZE)) / CHUNK_SIZE);
-        float z = (float)(i32)(i / (CHUNK_SIZE * CHUNK_SIZE));
-        ;
-
-        glm_translate(cube_instances[i].transform, (vec3){ x, y, z });
-
-        // glm_scale(cube_instances[i].transform, (vec3){ 0.5f, 0.5f, 0.5f });
-    }
-
     camera_t camera =
         camera_new((vec3){ 0.0f, 0.0f, 6.0f }, (vec3){ 0.0f, 0.0f, 0.0f }, GLM_MAT4_IDENTITY);
 
@@ -306,10 +292,22 @@ int main(void) {
 
     shader_t shader = shader_from_assets("shaders/vertex.glsl", "shaders/fragment.glsl");
 
+    LOG_INFO("Shader initialized\n");
+
+    world_t* world = world_new();
+    for (i32 x = 0; x < 8; x++) {
+        for (i32 y = 0; y < 2; y++) {
+            for (i32 z = 0; z < 8; z++) {
+                world_get_or_load_chunk(world, (ivec3){ x, y, z });
+            }
+        }
+    }
+
+    LOG_INFO("World initialized\n");
+
     // Set up depth testing
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-    glCullFace(GL_BACK);
     glLineWidth(4.0f);
 
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -320,8 +318,8 @@ int main(void) {
 
     double last_time = glfwGetTime();
 
-    ivec3 pointed_block = { 0, 0, 0 };
-    ivec3 old_pointed_block = { 0, 0, 0 };
+    ivec3 old_selected_block = { 0, 0, 0 };
+    ivec3 selected_block = { 0, 0, 0 };
 
     while (!glfwWindowShouldClose(window)) {
         /* Render here */
@@ -338,9 +336,9 @@ int main(void) {
 
         mesh_instance_draw(&plain_axes_instance);
 
-        mesh_instance_batch_draw(cube_instances, CHUNK_BLOCK_COUNT);
-
         mesh_instance_draw(&cube_skeleton_instance);
+
+        world_draw(world);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -359,55 +357,36 @@ int main(void) {
 
         rolling_avg_delta_time = rolling_avg_delta_time * 0.9f + g_gametime.delta_time * 0.1f;
 
-        // for (usize i = 0; i < CUBE_COUNT; i++) {
-        //     float rotx = (float)(i % CUBE_COUNT_1DIM);
-        //     float roty =
-        //         (float)(i32)((i % (CUBE_COUNT_1DIM + CUBE_COUNT_1DIM)) / CUBE_COUNT_1DIM);
-        //     float rotz = (float)(i32)(i / (CUBE_COUNT_1DIM * CUBE_COUNT_1DIM));
-        //
-        //     vec3 rot = { rotx, roty, rotz };
-        //
-        //     glm_vec3_scale(rot, (float)g_gametime.delta_time, rot);
-        //
-        //     glm_rotate_x(cube_instances[i].transform, rot[0], cube_instances[i].transform);
-        //     glm_rotate_y(cube_instances[i].transform, rot[1], cube_instances[i].transform);
-        //     glm_rotate_z(cube_instances[i].transform, rot[2], cube_instances[i].transform);
-        // }
-
         player_update(&player);
 
-        bool success =
-            camera_pointed_block(&player.camera, 100.0f, cube_instances, &pointed_block);
+        old_selected_block[0] = selected_block[0];
+        old_selected_block[1] = selected_block[1];
+        old_selected_block[2] = selected_block[2];
 
-        if (success && (pointed_block[0] != old_pointed_block[0] ||
-                        pointed_block[1] != old_pointed_block[1] ||
-                        pointed_block[2] != old_pointed_block[2])) {
-            LOG_INFO(
-                "Pointed block: %d, %d, %d\n",
-                pointed_block[0],
-                pointed_block[1],
-                pointed_block[2]
-            );
+        bool block_selected =
+            camera_pointed_block(&player.camera, world, 100.0f, &selected_block);
 
-            old_pointed_block[0] = pointed_block[0];
-            old_pointed_block[1] = pointed_block[1];
-            old_pointed_block[2] = pointed_block[2];
-
+        if (block_selected && (old_selected_block[0] != selected_block[0] ||
+                               old_selected_block[1] != selected_block[1] ||
+                               old_selected_block[2] != selected_block[2])) {
             glm_mat4_identity(cube_skeleton_instance.transform);
             glm_translate(
                 cube_skeleton_instance.transform,
-                (vec3
-                ){ (float)pointed_block[0], (float)pointed_block[1], (float)pointed_block[2] }
+                (vec3){ (float)selected_block[0] + 0.5f,
+                        (float)selected_block[1] + 0.5f,
+                        (float)selected_block[2] + 0.5f }
+            );
+
+            LOG_INFO(
+                "Selected block: %d %d %d\n",
+                selected_block[0],
+                selected_block[1],
+                selected_block[2]
             );
         }
 
-        if (g_mouse.buttons[1]) {
-            if (success) {
-                cube_instances
-                    [pointed_block[0] + pointed_block[1] * CHUNK_SIZE +
-                     pointed_block[2] * CHUNK_SIZE * CHUNK_SIZE]
-                        .active = false;
-            }
+        if (g_mouse.buttons[0]) {
+            world_set_block_at(world, selected_block, BLOCK_AIR);
         }
     }
 
@@ -415,12 +394,11 @@ int main(void) {
     LOG_INFO("Average delta time: %f\n", rolling_avg_delta_time);
     LOG_INFO("Average FPS: %f\n", 1.0f / rolling_avg_delta_time);
 
-    free(cube_instances);
-
     mesh_free(&plain_axes);
     mesh_free(&cube_skeleton);
     mesh_free(&cube);
     shader_free(&shader);
+    world_free(world);
 
     glfwTerminate();
     return 0;

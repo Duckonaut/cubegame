@@ -117,31 +117,10 @@ void camera_screen_to_world(
     glm_quat_rotatev(camera->rotation, VEC3_FORWARD, *world_direction);
 }
 
-bool world_get_block_at(const ivec3 position, ivec3* block_position) {
-    if (position[0] < 0 || position[0] >= 16 || position[1] < 0 || position[1] >= 16 ||
-        position[2] < 0 || position[2] >= 16) {
-        return false;
-    }
-
-    (*block_position)[0] = position[0];
-    (*block_position)[1] = position[1];
-    (*block_position)[2] = position[2];
-
-    return true;
-}
-
-bool world_get_block(const vec3 position, ivec3* block_position) {
-    (*block_position)[0] = (int)floorf(position[0] + 0.5f);
-    (*block_position)[1] = (int)floorf(position[1] + 0.5f);
-    (*block_position)[2] = (int)floorf(position[2] + 0.5f);
-
-    return world_get_block_at(*block_position, block_position);
-}
-
 bool camera_pointed_block(
     camera_t* camera,
+    world_t* world,
     float range,
-    const mesh_instance_t* blocks,
     ivec3* block_position
 ) {
     vec3 ray_origin = { 0 };
@@ -167,14 +146,18 @@ bool camera_pointed_block(
     while (glm_vec3_distance(ray_current, ray_end) > 0.1f) {
         glm_vec3_add(ray_current, ray_step, ray_current);
 
-        if (world_get_block(ray_current, block_position)) {
-            usize block_index = (usize)(*block_position)[0] +
-                                (usize)(*block_position)[1] * CHUNK_SIZE +
-                                (usize)(*block_position)[2] * CHUNK_SIZE * CHUNK_SIZE;
+        (*block_position)[0] = (int)ray_current[0];
+        (*block_position)[1] = (int)ray_current[1];
+        (*block_position)[2] = (int)ray_current[2];
 
-            if (blocks[block_index].active) {
-                return true;
-            }
+        block_t* block = world_get_block_at(world, *block_position);
+
+        if (block == NULL) {
+            continue;
+        }
+
+        if (block->id != BLOCK_AIR && (block_flags[block->id] & BLOCK_FLAG_SOLID)) {
+            return true;
         }
     }
 

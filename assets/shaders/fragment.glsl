@@ -10,5 +10,5 @@ uniform vec4 u_color;
 
 void main() {
     vec3 texColor = texture2D(u_texture, m_uv).rgb;
-    o_fragColor = vec4(texColor * m_color * u_color.rgb, 1.0 * u_color.a);
+    o_fragColor = vec4(texColor * u_color.rgb, 1.0 * u_color.a);
 }

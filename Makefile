@@ -3,7 +3,6 @@ BIN_NAME=cubegame
 OBJ_DIR=obj
 
 C_SOURCE_FILES=$(wildcard src/*.c)
-CXX_SOURCE_FILES=$(wildcard src/*.cpp)
 
 OBJECT_FILES=$(patsubst src/%.c, $(OBJ_DIR)/%.o, $(C_SOURCE_FILES))
 
@@ -27,7 +26,7 @@ $(OBJ_DIR)/%.o: src/%.c $(INCLUDE_FILES)
 	$(CC) $(CFLAGS) $(WARN_FLAGS) $(INCLUDE_PATHS) -c -o $@ $<
 
 $(BIN_NAME): $(OBJECT_FILES) $(INCLUDE_FILES)
-	$(CC) $(CXXFLAGS) $(WARN_FLAGS) $(INCLUDE_PATHS) -o $@ $(OBJECT_FILES) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(WARN_FLAGS) $(INCLUDE_PATHS) -o $@ $(OBJECT_FILES) $(LDFLAGS)
 
 clean:
 	rm -f ./$(BIN_NAME)

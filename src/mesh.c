@@ -4,6 +4,9 @@
 #include "globals.h"
 #include <cglm/mat4.h>
 
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+
 void mesh_init(mesh_t* mesh) {
     glGenVertexArrays(1, &mesh->vao);
     glGenBuffers(1, &mesh->vbo);

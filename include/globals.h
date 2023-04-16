@@ -32,3 +32,13 @@ typedef struct gametime {
 } gametime_t;
 
 extern gametime_t g_gametime;
+
+typedef struct debug_tools {
+    bool show_wireframe;
+    bool no_textures;
+    bool thin_lines;
+} debug_tools_t;
+
+extern debug_tools_t g_debug_tools;
+
+void debug_tools_key_callback(int key, int action, int mods);

@@ -13,6 +13,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+texture_t g_magic_pixel;
+
 u8* read_file(const char* path, usize* size) {
     FILE* file = fopen(path, "rb");
     if (!file) {
@@ -53,7 +55,7 @@ void free_file(u8* buffer) {
 }
 
 texture_t texture_load(const char* path) {
-    texture_t texture = {0};
+    texture_t texture = { 0 };
 
     u8* image_data = stbi_load(path, &texture.width, &texture.height, &texture.channels, 0);
 
@@ -71,9 +73,29 @@ texture_t texture_load(const char* path) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     if (texture.channels == 3) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture.width, texture.height, 0, GL_RGB, GL_UNSIGNED_BYTE, image_data);
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGB,
+            texture.width,
+            texture.height,
+            0,
+            GL_RGB,
+            GL_UNSIGNED_BYTE,
+            image_data
+        );
     } else if (texture.channels == 4) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.width, texture.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGBA,
+            texture.width,
+            texture.height,
+            0,
+            GL_RGBA,
+            GL_UNSIGNED_BYTE,
+            image_data
+        );
     } else {
         LOG_ERROR("Unsupported texture format: %s\n", path);
         stbi_image_free(image_data);
@@ -84,6 +106,56 @@ texture_t texture_load(const char* path) {
     glGenerateMipmap(GL_TEXTURE_2D);
 
     stbi_image_free(image_data);
+
+    return texture;
+}
+
+texture_t texture_load_from_memory(u8* data, i32 width, i32 height, i32 channels) {
+    texture_t texture = { 0 };
+
+    texture.width = width;
+    texture.height = height;
+    texture.channels = channels;
+
+    glGenTextures(1, &texture.id);
+    glBindTexture(GL_TEXTURE_2D, texture.id);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    if (texture.channels == 3) {
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGB,
+            texture.width,
+            texture.height,
+            0,
+            GL_RGB,
+            GL_UNSIGNED_BYTE,
+            data
+        );
+    } else if (texture.channels == 4) {
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGBA,
+            texture.width,
+            texture.height,
+            0,
+            GL_RGBA,
+            GL_UNSIGNED_BYTE,
+            data
+        );
+    } else {
+        LOG_ERROR("Unsupported texture format\n");
+        texture.id = 0;
+        return texture;
+    }
+
+    glGenerateMipmap(GL_TEXTURE_2D);
 
     return texture;
 }

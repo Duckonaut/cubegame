@@ -133,6 +133,8 @@ static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int act
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         g_mouse.captured = false;
     }
+
+    debug_tools_key_callback(key, action, mods);
 }
 
 static void glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
@@ -181,9 +183,9 @@ int main(void) {
         return -1;
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(640, 480, "dev: cubegame", NULL, NULL);
-    g_window_size[0] = 640;
-    g_window_size[1] = 480;
+    window = glfwCreateWindow(960, 640, "dev: cubegame", NULL, NULL);
+    g_window_size[0] = 960;
+    g_window_size[1] = 640;
 
     if (!window) {
         glfwTerminate();
@@ -254,6 +256,13 @@ int main(void) {
         return -1;
     }
 
+    u8 magic_pixel_data[4] = { 255, 255, 255, 255 };
+    g_magic_pixel = texture_load_from_memory(magic_pixel_data, 1, 1, 4);
+    if (!g_magic_pixel.id) {
+        LOG_ERROR("Failed to create magic pixel\n");
+        return -1;
+    }
+
     LOG_INFO("Texture loaded\n");
 
     mesh_instance_t plain_axes_instance = mesh_instance_new(&plain_axes);
@@ -278,7 +287,13 @@ int main(void) {
     camera_t camera =
         camera_new((vec3){ 0.0f, 0.0f, 6.0f }, (vec3){ 0.0f, 0.0f, 0.0f }, GLM_MAT4_IDENTITY);
 
-    glm_perspective(glm_rad(90.0f), 640.0f / 480.0f, 0.1f, 100.0f, camera.projection);
+    glm_perspective(
+        glm_rad(90.0f),
+        (float)g_window_size[0] / (float)g_window_size[1],
+        0.1f,
+        100.0f,
+        camera.projection
+    );
 
     camera_look_at(&camera, (vec3){ 0.0f, 0.0f, 0.0f }, (vec3){ 0.0f, 1.0f, 0.0f });
 
@@ -315,7 +330,11 @@ int main(void) {
         shader_use(&shader);
         player_set_uniforms(&player, &shader);
 
-        texture_bind(&atlas, 0);
+        if (g_debug_tools.no_textures) {
+            texture_bind(&g_magic_pixel, 0);
+        } else {
+            texture_bind(&atlas, 0);
+        }
 
         mesh_instance_draw(&plain_axes_instance);
 

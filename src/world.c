@@ -457,3 +457,21 @@ void world_set_block_at(world_t* world, ivec3 position, block_id_t block) {
 
     chunk_set_block(chunk, block_position, block);
 }
+
+void world_try_set_block_at(world_t* world, ivec3 position, block_id_t block) {
+    ivec3 chunk_position = { 0 };
+
+    world_get_chunk_position(position, chunk_position);
+
+    chunk_t* chunk = world_get_chunk(world, chunk_position);
+
+    if (!chunk) {
+        return;
+    }
+
+    ivec3 block_position = { position[0] % CHUNK_SIZE,
+                             position[1] % CHUNK_SIZE,
+                             position[2] % CHUNK_SIZE };
+
+    chunk_set_block(chunk, block_position, block);
+}

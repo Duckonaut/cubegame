@@ -386,7 +386,7 @@ int main(void) {
         }
 
         if (g_mouse.buttons[0]) {
-            world_set_block_at(world, selected_block, BLOCK_AIR);
+            world_try_set_block_at(world, selected_block, BLOCK_AIR);
         }
     }
 

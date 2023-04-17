@@ -127,6 +127,7 @@ chunk_t* world_get_chunk_slot(world_t* world);
 
 block_t* world_get_block_at(world_t* world, ivec3 position);
 void world_set_block_at(world_t* world, ivec3 position, block_id_t id);
+void world_try_set_block_at(world_t* world, ivec3 position, block_id_t id);
 
 // Unload a chunk from the world
 void world_unload_chunk(world_t* world, ivec3 position);

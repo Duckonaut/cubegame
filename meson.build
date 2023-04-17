@@ -14,7 +14,7 @@ if host_machine.system() == 'windows'
 endif
 
 if cc.get_id() == 'gcc' or cc.get_id() == 'clang'
-  add_project_arguments('-Wconversion -Werror -g', language : 'c')
+  add_project_arguments('-Wconversion', '-Werror', '-g', language : 'c')
 endif
 
 glfw_dep = dependency('glfw3', required : true, static : static_link_libs)

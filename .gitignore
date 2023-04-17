@@ -2,6 +2,7 @@ obj/
 .cache/
 .vscode/
 build/
+release/
 compile_commands.json
 cubegame
 dist/

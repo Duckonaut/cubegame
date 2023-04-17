@@ -4,3 +4,5 @@ obj/
 build/
 compile_commands.json
 cubegame
+dist/
+subprojects/*/

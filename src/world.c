@@ -32,6 +32,8 @@ void chunk_init(chunk_t* chunk, ivec3 position) {
     for (int i = 0; i < CHUNK_SIZE; i++) {
         chunk->blocks[i] = (block_t){ .id = BLOCK_AIR };
     }
+    chunk->mesh.vertices = NULL;
+    chunk->mesh.indices = NULL;
 
     chunk_generate(chunk);
     chunk_mesh(chunk);

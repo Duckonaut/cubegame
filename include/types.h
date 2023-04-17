@@ -15,4 +15,13 @@ typedef int16_t i16;
 typedef int32_t i32;
 typedef int64_t i64;
 typedef size_t usize;   // "natural" size of a pointer
+#ifdef __GNUC__
 typedef __ssize_t isize;
+#else
+#ifdef __clang__
+typedef __ssize_t isize;
+#else
+typedef int64_t isize;
+#endif
+#endif
+

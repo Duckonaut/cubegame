@@ -364,7 +364,7 @@ void world_chunk_slot_set_taken(world_t* world, u32 index) {
 }
 
 void world_chunk_slot_set_free(world_t* world, u32 index) {
-    world->chunk_slot_bitmap[index / 8] &= (u8)~(1 << (index % 8));
+    world->chunk_slot_bitmap[index / 8] &= (u8) ~(1 << (index % 8));
 }
 
 void world_free(world_t* world) {
@@ -400,20 +400,18 @@ chunk_t* world_get_or_load_chunk(world_t* world, ivec3 position) {
     chunk_init(chunk, world, position);
 
     const ivec3 NEIGHBOR_OFFSETS[6] = {
-        {  0,  0, -1 },
-        {  0,  0,  1 },
-        {  0, -1,  0 },
-        {  0,  1,  0 },
-        { -1,  0,  0 },
-        {  1,  0,  0 },
+        { 0, 0, -1 }, { 0, 0, 1 }, { 0, -1, 0 }, { 0, 1, 0 }, { -1, 0, 0 }, { 1, 0, 0 },
     };
 
     for (u32 i = 0; i < 6; i++) {
-        chunk_t* neighbor = world_get_chunk(world, (ivec3){
-            position[0] + NEIGHBOR_OFFSETS[i][0],
-            position[1] + NEIGHBOR_OFFSETS[i][1],
-            position[2] + NEIGHBOR_OFFSETS[i][2],
-        });
+        chunk_t* neighbor = world_get_chunk(
+            world,
+            (ivec3){
+                position[0] + NEIGHBOR_OFFSETS[i][0],
+                position[1] + NEIGHBOR_OFFSETS[i][1],
+                position[2] + NEIGHBOR_OFFSETS[i][2],
+            }
+        );
         if (neighbor) {
             chunk_remesh(neighbor, world);
         }
@@ -543,4 +541,58 @@ void world_try_set_block_at(world_t* world, ivec3 position, block_id_t block) {
                              position[2] % CHUNK_SIZE };
 
     chunk_set_block(chunk, world, block_position, block);
+
+    if (block_position[0] == 0) {
+        ivec3 neighbor_position = { chunk_position[0] - 1,
+                                    chunk_position[1],
+                                    chunk_position[2] };
+        chunk_t* neighbor = world_get_chunk(world, neighbor_position);
+        if (neighbor) {
+            chunk_remesh(neighbor, world);
+        }
+    } else if (block_position[0] == CHUNK_SIZE - 1) {
+        ivec3 neighbor_position = { chunk_position[0] + 1,
+                                    chunk_position[1],
+                                    chunk_position[2] };
+        chunk_t* neighbor = world_get_chunk(world, neighbor_position);
+        if (neighbor) {
+            chunk_remesh(neighbor, world);
+        }
+    }
+
+    if (block_position[1] == 0) {
+        ivec3 neighbor_position = { chunk_position[0],
+                                    chunk_position[1] - 1,
+                                    chunk_position[2] };
+        chunk_t* neighbor = world_get_chunk(world, neighbor_position);
+        if (neighbor) {
+            chunk_remesh(neighbor, world);
+        }
+    } else if (block_position[1] == CHUNK_SIZE - 1) {
+        ivec3 neighbor_position = { chunk_position[0],
+                                    chunk_position[1] + 1,
+                                    chunk_position[2] };
+        chunk_t* neighbor = world_get_chunk(world, neighbor_position);
+        if (neighbor) {
+            chunk_remesh(neighbor, world);
+        }
+    }
+
+    if (block_position[2] == 0) {
+        ivec3 neighbor_position = { chunk_position[0],
+                                    chunk_position[1],
+                                    chunk_position[2] - 1 };
+        chunk_t* neighbor = world_get_chunk(world, neighbor_position);
+        if (neighbor) {
+            chunk_remesh(neighbor, world);
+        }
+    } else if (block_position[2] == CHUNK_SIZE - 1) {
+        ivec3 neighbor_position = { chunk_position[0],
+                                    chunk_position[1],
+                                    chunk_position[2] + 1 };
+        chunk_t* neighbor = world_get_chunk(world, neighbor_position);
+        if (neighbor) {
+            chunk_remesh(neighbor, world);
+        }
+    }
 }

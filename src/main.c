@@ -285,8 +285,7 @@ int main(void) {
 
     LOG_INFO("Camera initialized\n");
 
-    g_player =
-        player_new((vec3){ 0.0f, 0.0f, 0.0f }, (vec3){ 0.0f, 0.0f, 0.0f }, camera);
+    g_player = player_new((vec3){ 0.0f, 0.0f, 0.0f }, (vec3){ 0.0f, 0.0f, 0.0f }, camera);
 
     LOG_INFO("Player initialized\n");
 
@@ -400,7 +399,39 @@ int main(void) {
     mesh_free(&cube_skeleton);
     mesh_free(&cube);
     shader_free(&shader);
+
+    usize total_chunks = 0;
+    usize total_blocks = 0;
+    usize total_vertices = 0;
+    usize total_tris = 0;
+
+    for (u32 i = 0; i < MAX_LOADED_CHUNKS; i++) {
+        chunk_t* chunk = &world->chunks[i];
+
+        if (chunk->mesh.vao != 0) {
+            total_chunks++;
+
+            total_vertices += chunk->mesh.vertex_count;
+            total_tris += (usize)(chunk->mesh.index_count / 3);
+
+            for (i32 j = 0; j < CHUNK_SIZE; j++) {
+                for (i32 k = 0; k < CHUNK_SIZE; k++) {
+                    for (i32 l = 0; l < CHUNK_SIZE; l++) {
+                        if (chunk_get_block(chunk, (ivec3){ j, k, l }).id != BLOCK_AIR) {
+                            total_blocks++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     world_free(world);
+
+    LOG_INFO("Total chunks: %zu\n", total_chunks);
+    LOG_INFO("Total blocks: %zu\n", total_blocks);
+    LOG_INFO("Total vertices: %zu\n", total_vertices);
+    LOG_INFO("Total triangles: %zu\n", total_tris);
 
     glfwTerminate();
     return 0;

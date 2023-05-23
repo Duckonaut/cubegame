@@ -30,5 +30,13 @@ void debug_tools_key_callback(int key, int action, int mods) {
             g_debug_tools.thin_lines = !g_debug_tools.thin_lines;
             glLineWidth(g_debug_tools.thin_lines ? 1.0f : 4.0f);
         }
+        else if (key == GLFW_KEY_F6) {
+            g_debug_tools.no_cull = !g_debug_tools.no_cull;
+            if (g_debug_tools.no_cull) {
+                glDisable(GL_CULL_FACE);
+            } else {
+                glEnable(GL_CULL_FACE);
+            }
+        }
     }
 }

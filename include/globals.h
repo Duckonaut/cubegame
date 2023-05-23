@@ -37,6 +37,7 @@ typedef struct debug_tools {
     bool show_wireframe;
     bool no_textures;
     bool thin_lines;
+    bool no_cull;
 } debug_tools_t;
 
 extern debug_tools_t g_debug_tools;

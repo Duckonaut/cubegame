@@ -3,6 +3,7 @@
 #include "globals.h"
 #include "log.h"
 #include "mesh.h"
+#include "physics.h"
 #include "types.h"
 #include "world.h"
 
@@ -123,43 +124,8 @@ bool camera_pointed_block(
     float range,
     ivec3* block_position
 ) {
-    vec3 ray_origin = { 0 };
-    vec3 ray_direction = { 0 };
+    ray_t ray;
+    ray_from_camera(&ray, camera);
 
-    camera_screen_to_world(
-        camera,
-        (vec2){ (float)g_window_size[0] / 2, (float)g_window_size[1] / 2 },
-        &ray_origin,
-        &ray_direction
-    );
-
-    vec3 ray_end = { 0 };
-    glm_vec3_scale(ray_direction, range, ray_end);
-    glm_vec3_add(ray_origin, ray_end, ray_end);
-
-    vec3 ray_step = { 0 };
-    glm_vec3_scale(ray_direction, 0.1f, ray_step);
-
-    vec3 ray_current = { 0 };
-    glm_vec3_copy(ray_origin, ray_current);
-
-    while (glm_vec3_distance(ray_current, ray_end) > 0.1f) {
-        glm_vec3_add(ray_current, ray_step, ray_current);
-
-        (*block_position)[0] = (int)ray_current[0];
-        (*block_position)[1] = (int)ray_current[1];
-        (*block_position)[2] = (int)ray_current[2];
-
-        block_t* block = world_get_block_at(world, *block_position);
-
-        if (block == NULL) {
-            continue;
-        }
-
-        if (block->id != BLOCK_AIR && (block_flags[block->id] & BLOCK_FLAG_SOLID)) {
-            return true;
-        }
-    }
-
-    return false;
+    return ray_intersect_block(ray, world, range, BLOCK_FLAG_SOLID, block_position, NULL);
 }

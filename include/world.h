@@ -26,10 +26,10 @@
     ((id) % ATLAS_TEXTURE_SLOT_COUNT), (((id) / ATLAS_TEXTURE_SLOT_COUNT) * 3)
 #define BLOCK_ID_TO_ATLAS_POS_TOP(id)                                                          \
     ((id) % ATLAS_TEXTURE_SLOT_COUNT), (((id) / ATLAS_TEXTURE_SLOT_COUNT) * 3 +                \
-                                        (block_flags[id] & BLOCK_FLAG_TEXTURE_TOP ? 1 : 0))
+                                        ((block_flags[id] & BLOCK_FLAG_TEXTURE_TOP) ? 1 : 0))
 #define BLOCK_ID_TO_ATLAS_POS_BOTTOM(id)                                                       \
     ((id) % ATLAS_TEXTURE_SLOT_COUNT), (((id) / ATLAS_TEXTURE_SLOT_COUNT) * 3 +                \
-                                        (block_flags[id] & BLOCK_FLAG_TEXTURE_BOTTOM ? 2 : 0))
+                                        ((block_flags[id] & BLOCK_FLAG_TEXTURE_BOTTOM) ? 2 : 0))
 
 typedef u8 block_id_t;
 typedef enum block_face {

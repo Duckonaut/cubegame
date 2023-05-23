@@ -309,6 +309,8 @@ int main(void) {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glLineWidth(4.0f);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
 
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 

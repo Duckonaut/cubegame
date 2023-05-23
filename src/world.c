@@ -169,19 +169,19 @@ void block_mesh_face(mesh_t* mesh, ivec3 position, block_face_t face, block_t bl
         case BLOCK_FACE_LEFT:
             vertices[0].position[0] = (float)position[0];
             vertices[0].position[1] = (float)position[1];
-            vertices[0].position[2] = (float)position[2];
+            vertices[0].position[2] = (float)position[2] + 1.0f;
 
             vertices[1].position[0] = (float)position[0];
             vertices[1].position[1] = (float)position[1] + 1.0f;
-            vertices[1].position[2] = (float)position[2];
+            vertices[1].position[2] = (float)position[2] + 1.0f;
 
             vertices[2].position[0] = (float)position[0];
             vertices[2].position[1] = (float)position[1] + 1.0f;
-            vertices[2].position[2] = (float)position[2] + 1.0f;
+            vertices[2].position[2] = (float)position[2];
 
             vertices[3].position[0] = (float)position[0];
             vertices[3].position[1] = (float)position[1];
-            vertices[3].position[2] = (float)position[2] + 1.0f;
+            vertices[3].position[2] = (float)position[2];
             break;
         case BLOCK_FACE_RIGHT:
             vertices[0].position[0] = (float)position[0] + 1.0f;
@@ -222,50 +222,50 @@ void block_mesh_face(mesh_t* mesh, ivec3 position, block_face_t face, block_t bl
             vertices[0].position[1] = (float)position[1] + 1.0f;
             vertices[0].position[2] = (float)position[2];
 
-            vertices[1].position[0] = (float)position[0] + 1.0f;
+            vertices[1].position[0] = (float)position[0];
             vertices[1].position[1] = (float)position[1] + 1.0f;
-            vertices[1].position[2] = (float)position[2];
-
-            vertices[2].position[0] = (float)position[0] + 1.0f;
-            vertices[2].position[1] = (float)position[1] + 1.0f;
-            vertices[2].position[2] = (float)position[2] + 1.0f;
-
-            vertices[3].position[0] = (float)position[0];
-            vertices[3].position[1] = (float)position[1] + 1.0f;
-            vertices[3].position[2] = (float)position[2] + 1.0f;
-            break;
-        case BLOCK_FACE_FRONT:
-            vertices[0].position[0] = (float)position[0];
-            vertices[0].position[1] = (float)position[1];
-            vertices[0].position[2] = (float)position[2];
-
-            vertices[1].position[0] = (float)position[0] + 1.0f;
-            vertices[1].position[1] = (float)position[1];
-            vertices[1].position[2] = (float)position[2];
-
-            vertices[2].position[0] = (float)position[0] + 1.0f;
-            vertices[2].position[1] = (float)position[1] + 1.0f;
-            vertices[2].position[2] = (float)position[2];
-
-            vertices[3].position[0] = (float)position[0];
-            vertices[3].position[1] = (float)position[1] + 1.0f;
-            vertices[3].position[2] = (float)position[2];
-            break;
-        case BLOCK_FACE_BACK:
-            vertices[0].position[0] = (float)position[0];
-            vertices[0].position[1] = (float)position[1];
-            vertices[0].position[2] = (float)position[2] + 1.0f;
-
-            vertices[1].position[0] = (float)position[0] + 1.0f;
-            vertices[1].position[1] = (float)position[1];
             vertices[1].position[2] = (float)position[2] + 1.0f;
 
             vertices[2].position[0] = (float)position[0] + 1.0f;
             vertices[2].position[1] = (float)position[1] + 1.0f;
             vertices[2].position[2] = (float)position[2] + 1.0f;
 
-            vertices[3].position[0] = (float)position[0];
+            vertices[3].position[0] = (float)position[0] + 1.0f;
             vertices[3].position[1] = (float)position[1] + 1.0f;
+            vertices[3].position[2] = (float)position[2];
+            break;
+        case BLOCK_FACE_FRONT:
+            vertices[0].position[0] = (float)position[0];
+            vertices[0].position[1] = (float)position[1];
+            vertices[0].position[2] = (float)position[2];
+
+            vertices[1].position[0] = (float)position[0];
+            vertices[1].position[1] = (float)position[1] + 1.0f;
+            vertices[1].position[2] = (float)position[2];
+
+            vertices[2].position[0] = (float)position[0] + 1.0f;
+            vertices[2].position[1] = (float)position[1] + 1.0f;
+            vertices[2].position[2] = (float)position[2];
+
+            vertices[3].position[0] = (float)position[0] + 1.0f;
+            vertices[3].position[1] = (float)position[1];
+            vertices[3].position[2] = (float)position[2];
+            break;
+        case BLOCK_FACE_BACK:
+            vertices[0].position[0] = (float)position[0] + 1.0f;
+            vertices[0].position[1] = (float)position[1];
+            vertices[0].position[2] = (float)position[2] + 1.0f;
+
+            vertices[1].position[0] = (float)position[0] + 1.0f;
+            vertices[1].position[1] = (float)position[1] + 1.0f;
+            vertices[1].position[2] = (float)position[2] + 1.0f;
+
+            vertices[2].position[0] = (float)position[0];
+            vertices[2].position[1] = (float)position[1] + 1.0f;
+            vertices[2].position[2] = (float)position[2] + 1.0f;
+
+            vertices[3].position[0] = (float)position[0];
+            vertices[3].position[1] = (float)position[1];
             vertices[3].position[2] = (float)position[2] + 1.0f;
             break;
     }
@@ -291,8 +291,8 @@ void block_mesh_face(mesh_t* mesh, ivec3 position, block_face_t face, block_t bl
             ivec2 atlas_pos = { BLOCK_ID_TO_ATLAS_POS(block.id) };
             vec2 uv = ATLAS_TEXTURE_SLOT_UV(atlas_pos[0], atlas_pos[1]);
 
-            vertices[i].uv[0] = uv[0] + (float)(i == 1 || i == 2) / ATLAS_TEXTURE_SLOT_COUNT;
-            vertices[i].uv[1] = uv[1] + (float)(i == 2 || i == 3) / ATLAS_TEXTURE_SLOT_COUNT;
+            vertices[i].uv[0] = uv[0] + (float)(i == 0 || i == 1) / ATLAS_TEXTURE_SLOT_COUNT;
+            vertices[i].uv[1] = uv[1] + (float)(i == 0 || i == 3) / ATLAS_TEXTURE_SLOT_COUNT;
         }
     }
 

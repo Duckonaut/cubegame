@@ -14,6 +14,8 @@ typedef struct player {
     camera_t camera;
 } player_t;
 
+extern player_t g_player;
+
 player_t player_new(vec3 position, vec3 rotation, camera_t camera);
 
 void player_update(player_t* player);

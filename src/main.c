@@ -285,7 +285,7 @@ int main(void) {
 
     LOG_INFO("Camera initialized\n");
 
-    player_t player =
+    g_player =
         player_new((vec3){ 0.0f, 0.0f, 0.0f }, (vec3){ 0.0f, 0.0f, 0.0f }, camera);
 
     LOG_INFO("Player initialized\n");
@@ -328,7 +328,7 @@ int main(void) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader_use(&shader);
-        player_set_uniforms(&player, &shader);
+        player_set_uniforms(&g_player, &shader);
 
         if (g_debug_tools.no_textures) {
             texture_bind(&g_magic_pixel, 0);
@@ -359,14 +359,14 @@ int main(void) {
 
         rolling_avg_delta_time = rolling_avg_delta_time * 0.9f + g_gametime.delta_time * 0.1f;
 
-        player_update(&player);
+        player_update(&g_player);
 
         old_selected_block[0] = selected_block[0];
         old_selected_block[1] = selected_block[1];
         old_selected_block[2] = selected_block[2];
 
         bool block_selected =
-            camera_pointed_block(&player.camera, world, 100.0f, &selected_block);
+            camera_pointed_block(&g_player.camera, world, 100.0f, &selected_block);
 
         if (block_selected && (old_selected_block[0] != selected_block[0] ||
                                old_selected_block[1] != selected_block[1] ||

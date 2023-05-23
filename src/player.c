@@ -13,6 +13,8 @@
 #include "glm_extra.h"
 #include "globals.h"
 
+player_t g_player;
+
 player_t player_new(vec3 position, vec3 rotation, camera_t camera) {
     player_t player = { 0 };
 

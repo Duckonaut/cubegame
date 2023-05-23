@@ -76,8 +76,16 @@ typedef struct chunk {
     block_t blocks[CHUNK_BLOCK_COUNT];
 } chunk_t;
 
+#define MAX_LOADED_CHUNKS 256 // 8 in X, 4 in Y, 8 in Z
+
+typedef struct world {
+    chunk_t* chunks;
+    u32 loaded_chunk_count;
+    u8 chunk_slot_bitmap[MAX_LOADED_CHUNKS / 8];
+} world_t;
+
 // Initialize a chunk in place
-void chunk_init(chunk_t* chunk, ivec3 position);
+void chunk_init(chunk_t* chunk, world_t* world, ivec3 position);
 // Destroy a chunk in place, freeing all memory associated with it
 // Does not free the chunk itself
 void chunk_forget(chunk_t* chunk);
@@ -87,27 +95,22 @@ void chunk_forget(chunk_t* chunk);
 void chunk_generate(chunk_t* chunk);
 
 // Can be used to remove a block from a chunk, ie. set it to air
-void chunk_set_block(chunk_t* chunk, ivec3 position, block_id_t id);
+void chunk_set_block(chunk_t* chunk, world_t* world, ivec3 position, block_id_t id);
 block_t chunk_get_block(chunk_t* chunk, ivec3 position);
 
 // Mesh a chunk in place
+// Takes into account the chunk's position in the world
 // Does not free the chunk's previous mesh
-void chunk_mesh(chunk_t* chunk);
+void chunk_mesh(chunk_t* chunk, world_t* world);
+
+void chunk_remesh(chunk_t* chunk, world_t* world);
+void chunk_remesh_block(chunk_t* chunk, world_t* world, ivec3 position);
+
 // Destroy a chunk's mesh in place, freeing all memory associated with it
 // Does not free the chunk itself or its blocks
 void chunk_forget_mesh(chunk_t* chunk);
 
-void chunk_remesh(chunk_t* chunk);
-void chunk_remesh_block(chunk_t* chunk, ivec3 position);
-
 void chunk_draw(chunk_t* chunk);
-
-#define MAX_LOADED_CHUNKS 256 // 8 in X, 4 in Y, 8 in Z
-
-typedef struct world {
-    chunk_t* chunks;
-    u32 loaded_chunk_count;
-} world_t;
 
 // Create a new world
 // World must be freed with world_free

@@ -2,11 +2,13 @@
 #include "assets.h"
 #include "log.h"
 #include "mesh.h"
+#include "player.h"
 #include "shader.h"
 #include <cglm/affine-pre.h>
 #include <cglm/ivec3.h>
 #include <cglm/mat4.h>
 #include <cglm/types.h>
+#include <cglm/vec3.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -18,16 +20,15 @@ block_flags_t block_flags[BLOCK_ID_MAX] = {
     // BLOCK_ID_DIRT
     (block_flags_t)(BLOCK_FLAG_SOLID | BLOCK_FLAG_MESHED),
     // BLOCK_ID_GRASS
-    (block_flags_t
-    )(BLOCK_FLAG_SOLID | BLOCK_FLAG_MESHED | BLOCK_FLAG_TEXTURE_TOP | BLOCK_FLAG_TEXTURE_BOTTOM
-    ),
+    (block_flags_t)(BLOCK_FLAG_SOLID | BLOCK_FLAG_MESHED | BLOCK_FLAG_TEXTURE_TOP |
+                    BLOCK_FLAG_TEXTURE_BOTTOM),
     // BLOCK_ID_BRICK
     (block_flags_t)(BLOCK_FLAG_SOLID | BLOCK_FLAG_MESHED),
     // BLOCK_ID_GLASS
     (block_flags_t)(BLOCK_FLAG_SOLID | BLOCK_FLAG_MESHED | BLOCK_FLAG_TRANSPARENT),
 };
 
-void chunk_init(chunk_t* chunk, ivec3 position) {
+void chunk_init(chunk_t* chunk, world_t* world, ivec3 position) {
     glm_ivec3_copy(position, chunk->position);
     for (int i = 0; i < CHUNK_SIZE; i++) {
         chunk->blocks[i] = (block_t){ .id = BLOCK_AIR };
@@ -36,7 +37,7 @@ void chunk_init(chunk_t* chunk, ivec3 position) {
     chunk->mesh.indices = NULL;
 
     chunk_generate(chunk);
-    chunk_mesh(chunk);
+    chunk_mesh(chunk, world);
 }
 void chunk_forget(chunk_t* chunk) {
     chunk_forget_mesh(chunk);
@@ -67,10 +68,10 @@ void chunk_generate(chunk_t* chunk) {
     }
 }
 
-void chunk_set_block(chunk_t* chunk, ivec3 position, block_id_t id) {
+void chunk_set_block(chunk_t* chunk, world_t* world, ivec3 position, block_id_t id) {
     i32 index = CHUNK_POS_TO_INDEX(position[0], position[1], position[2]);
     chunk->blocks[index].id = id;
-    chunk_remesh(chunk);
+    chunk_remesh(chunk, world);
 }
 
 block_t chunk_get_block(chunk_t* chunk, ivec3 position) {
@@ -78,7 +79,7 @@ block_t chunk_get_block(chunk_t* chunk, ivec3 position) {
     return chunk->blocks[index];
 }
 
-void chunk_mesh(chunk_t* chunk) {
+void chunk_mesh(chunk_t* chunk, world_t* world) {
     if (!chunk->mesh.vertices) {
         chunk->mesh.vertices =
             malloc(sizeof(vertex_t) * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 4);
@@ -94,7 +95,7 @@ void chunk_mesh(chunk_t* chunk) {
     for (i32 x = 0; x < CHUNK_SIZE; x++) {
         for (i32 y = 0; y < CHUNK_SIZE; y++) {
             for (i32 z = 0; z < CHUNK_SIZE; z++) {
-                chunk_remesh_block(chunk, (ivec3){ x, y, z });
+                chunk_remesh_block(chunk, world, (ivec3){ x, y, z });
             }
         }
     }
@@ -112,12 +113,12 @@ void chunk_forget_mesh(chunk_t* chunk) {
     chunk->mesh.index_count = 0;
 }
 
-void chunk_remesh(chunk_t* chunk) {
+void chunk_remesh(chunk_t* chunk, world_t* world) {
     chunk_forget_mesh(chunk);
-    chunk_mesh(chunk);
+    chunk_mesh(chunk, world);
 }
 
-void chunk_remesh_block(chunk_t* chunk, ivec3 pos) {
+void chunk_remesh_block(chunk_t* chunk, world_t* world, ivec3 pos) {
     block_t block = chunk_get_block(chunk, pos);
     if (block.id == BLOCK_AIR) {
         return;
@@ -146,7 +147,26 @@ void chunk_remesh_block(chunk_t* chunk, ivec3 pos) {
         if (neighbor_pos[0] < 0 || neighbor_pos[0] >= CHUNK_SIZE || neighbor_pos[1] < 0 ||
             neighbor_pos[1] >= CHUNK_SIZE || neighbor_pos[2] < 0 ||
             neighbor_pos[2] >= CHUNK_SIZE) {
-            block_mesh_face(&chunk->mesh, block_pos, (block_face_t)i, block);
+            if (world != NULL) {
+                ivec3 neighbor_block_world_pos = { 0 };
+                glm_ivec3_copy(chunk->position, neighbor_block_world_pos);
+                glm_ivec3_scale(neighbor_block_world_pos, CHUNK_SIZE, neighbor_block_world_pos);
+                glm_ivec3_add(neighbor_block_world_pos, block_pos, neighbor_block_world_pos);
+                glm_ivec3_add(
+                    neighbor_block_world_pos,
+                    DIRECTION_OFFSETS[i],
+                    neighbor_block_world_pos
+                );
+
+                block_t* neighbor = world_get_block_at(world, neighbor_block_world_pos);
+
+                if (neighbor == NULL || neighbor->id == BLOCK_AIR ||
+                    (block_flags[neighbor->id] & BLOCK_FLAG_TRANSPARENT)) {
+                    block_mesh_face(&chunk->mesh, block_pos, (block_face_t)i, block);
+                }
+            } else {
+                block_mesh_face(&chunk->mesh, block_pos, (block_face_t)i, block);
+            }
             continue;
         }
 
@@ -335,6 +355,18 @@ world_t* world_new(void) {
     return world;
 }
 
+bool world_chunk_slot_is_taken(world_t* world, u32 index) {
+    return world->chunk_slot_bitmap[index / 8] & (1 << (index % 8));
+}
+
+void world_chunk_slot_set_taken(world_t* world, u32 index) {
+    world->chunk_slot_bitmap[index / 8] |= (1 << (index % 8));
+}
+
+void world_chunk_slot_set_free(world_t* world, u32 index) {
+    world->chunk_slot_bitmap[index / 8] &= (u8)~(1 << (index % 8));
+}
+
 void world_free(world_t* world) {
     for (u32 i = 0; i < world->loaded_chunk_count; i++) {
         chunk_forget(&world->chunks[i]);
@@ -344,7 +376,10 @@ void world_free(world_t* world) {
 }
 
 chunk_t* world_get_chunk(world_t* world, ivec3 position) {
-    for (u32 i = 0; i < world->loaded_chunk_count; i++) {
+    for (u32 i = 0; i < MAX_LOADED_CHUNKS; i++) {
+        if (!world_chunk_slot_is_taken(world, i)) {
+            continue;
+        }
         if (world->chunks[i].position[0] == position[0] &&
             world->chunks[i].position[1] == position[1] &&
             world->chunks[i].position[2] == position[2]) {
@@ -360,44 +395,77 @@ chunk_t* world_get_or_load_chunk(world_t* world, ivec3 position) {
         return chunk;
     }
 
-    if (world->loaded_chunk_count >= MAX_LOADED_CHUNKS) {
-        chunk = world_get_chunk_slot(world);
-        chunk_init(chunk, position);
-        return chunk;
-    }
+    chunk = world_get_chunk_slot(world);
+    world_chunk_slot_set_taken(world, (u32)(chunk - world->chunks));
+    chunk_init(chunk, world, position);
 
-    chunk = &world->chunks[world->loaded_chunk_count++];
-    chunk_init(chunk, position);
+    const ivec3 NEIGHBOR_OFFSETS[6] = {
+        {  0,  0, -1 },
+        {  0,  0,  1 },
+        {  0, -1,  0 },
+        {  0,  1,  0 },
+        { -1,  0,  0 },
+        {  1,  0,  0 },
+    };
+
+    for (u32 i = 0; i < 6; i++) {
+        chunk_t* neighbor = world_get_chunk(world, (ivec3){
+            position[0] + NEIGHBOR_OFFSETS[i][0],
+            position[1] + NEIGHBOR_OFFSETS[i][1],
+            position[2] + NEIGHBOR_OFFSETS[i][2],
+        });
+        if (neighbor) {
+            chunk_remesh(neighbor, world);
+        }
+    }
 
     return chunk;
 }
 
 chunk_t* world_get_chunk_slot(world_t* world) {
     if (world->loaded_chunk_count >= MAX_LOADED_CHUNKS) {
-        chunk_forget(&world->chunks[0]);
-        // TODO: Probably not the best way to do this
-        memmove(
-            &world->chunks[0],
-            &world->chunks[1],
-            sizeof(chunk_t*) * (MAX_LOADED_CHUNKS - 1)
-        );
-        return &world->chunks[MAX_LOADED_CHUNKS - 1];
+        float distance = 0.0f;
+        u32 chunk_to_unload = 0;
+        for (u32 i = 0; i < MAX_LOADED_CHUNKS; i++) {
+            // world is full = no need to check if slot is taken
+
+            vec3 diff;
+            glm_vec3_sub(
+                (vec3){ (float)world->chunks[i].position[0] * CHUNK_SIZE,
+                        (float)world->chunks[i].position[1] * CHUNK_SIZE,
+                        (float)world->chunks[i].position[2] * CHUNK_SIZE },
+                g_player.position,
+                diff
+            );
+            float d = glm_vec3_norm(diff);
+
+            if (d > distance) {
+                distance = d;
+                chunk_to_unload = i;
+            }
+        }
+
+        chunk_forget(&world->chunks[chunk_to_unload]);
+        world_chunk_slot_set_free(world, chunk_to_unload);
+
+        return &world->chunks[chunk_to_unload];
     }
 
     return &world->chunks[world->loaded_chunk_count++];
 }
 
 void world_unload_chunk(world_t* world, ivec3 position) {
-    for (u32 i = 0; i < world->loaded_chunk_count; i++) {
+    for (u32 i = 0; i < MAX_LOADED_CHUNKS; i++) {
+        if (!world_chunk_slot_is_taken(world, i)) {
+            continue;
+        }
+
         if (world->chunks[i].position[0] == position[0] &&
             world->chunks[i].position[1] == position[1] &&
             world->chunks[i].position[2] == position[2]) {
             chunk_forget(&world->chunks[i]);
-            memmove(
-                &world->chunks[i],
-                &world->chunks[i + 1],
-                sizeof(chunk_t*) * (world->loaded_chunk_count - i - 1)
-            );
+            world_chunk_slot_set_free(world, i);
+
             world->loaded_chunk_count--;
             return;
         }
@@ -407,6 +475,7 @@ void world_unload_chunk(world_t* world, ivec3 position) {
 void world_unload_all_chunks(world_t* world) {
     for (u32 i = 0; i < world->loaded_chunk_count; i++) {
         chunk_forget(&world->chunks[i]);
+        world_chunk_slot_set_free(world, i);
     }
     world->loaded_chunk_count = 0;
 }
@@ -455,7 +524,7 @@ void world_set_block_at(world_t* world, ivec3 position, block_id_t block) {
                              position[1] % CHUNK_SIZE,
                              position[2] % CHUNK_SIZE };
 
-    chunk_set_block(chunk, block_position, block);
+    chunk_set_block(chunk, world, block_position, block);
 }
 
 void world_try_set_block_at(world_t* world, ivec3 position, block_id_t block) {
@@ -473,5 +542,5 @@ void world_try_set_block_at(world_t* world, ivec3 position, block_id_t block) {
                              position[1] % CHUNK_SIZE,
                              position[2] % CHUNK_SIZE };
 
-    chunk_set_block(chunk, block_position, block);
+    chunk_set_block(chunk, world, block_position, block);
 }

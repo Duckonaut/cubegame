@@ -2,6 +2,7 @@
 #include <cglm/types.h>
 
 #include "globals.h"
+#include "log.h"
 #include "physics.h"
 #include "world.h"
 
@@ -22,22 +23,24 @@ bool ray_intersect_block(
     ivec3* block_pos,
     vec3* normal
 ) {
+    float traveled = 0.0f;
     vec3 current;
     glm_vec3_copy(r.origin, current);
 
     vec3 step;
-    glm_vec3_scale(r.direction, 0.1f, step);
+    glm_vec3_scale(r.direction, 0.05f, step);
 
     vec3 end;
     glm_vec3_scale(r.direction, range, end);
     glm_vec3_add(end, r.origin, end);
 
-    while (glm_vec3_distance(current, end) > 0.1f) {
+    while (traveled < range) {
         glm_vec3_add(current, step, current);
+        traveled += 0.05f;
 
-        (*block_pos)[0] = (int)current[0];
-        (*block_pos)[1] = (int)current[1];
-        (*block_pos)[2] = (int)current[2];
+        (*block_pos)[0] = (int)floorf(current[0]);
+        (*block_pos)[1] = (int)floorf(current[1]);
+        (*block_pos)[2] = (int)floorf(current[2]);
 
         block_t* block = world_get_block_at(world, *block_pos);
 
@@ -45,13 +48,18 @@ bool ray_intersect_block(
             continue;
         }
 
-        if (block->id != BLOCK_AIR && (block_flags[block->id] * flags) != 0) {
+        if (block->id != BLOCK_AIR && (block_flags[block->id] & flags) != 0) {
             if (normal != NULL) {
                 vec3 center;
-                glm_vec3_add(current, (vec3){ 0.5f, 0.5f, 0.5f }, center);
+                glm_vec3_add(
+                    (vec3
+                    ){ (float)(*block_pos)[0], (float)(*block_pos)[1], (float)(*block_pos)[2] },
+                    (vec3){ 0.5f, 0.5f, 0.5f },
+                    center
+                );
 
                 vec3 diff;
-                glm_vec3_sub(center, r.origin, diff);
+                glm_vec3_sub(center, current, diff);
 
                 vec3 abs_diff;
                 glm_vec3_abs(diff, abs_diff);
@@ -70,7 +78,6 @@ bool ray_intersect_block(
                     (*normal)[2] = diff[2] > 0 ? -1 : 1;
                 }
             }
-
 
             return true;
         }

@@ -11,6 +11,7 @@
 
 #include "camera.h"
 #include "globals.h"
+#include "physics.h"
 #include "player.h"
 #include "types.h"
 #include "log.h"
@@ -102,6 +103,17 @@ u32 cube_indices[] = {
     20, 21, 22, 22, 21, 23,
 };
 
+vertex_t magic_plane_vertices[] = {
+    { { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f } },
+    { { 1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f } },
+    { { 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } },
+    { { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } },
+};
+
+u32 magic_plane_indices[] = {
+    0, 1, 2, 2, 1, 3,
+};
+
 // clang-format on
 
 static void glfw_error_callback(int error, const char* description) {
@@ -158,9 +170,15 @@ static void glfw_mouse_button_callback(GLFWwindow* window, int button, int actio
     }
 
     if (action == GLFW_PRESS) {
-        g_mouse.buttons[button_index] = true;
+        if (g_mouse.buttons_up[button_index]) {
+            g_mouse.buttons[button_index] = true;
+        }
+
+        g_mouse.buttons_down[button_index] = true;
+        g_mouse.buttons_up[button_index] = false;
     } else if (action == GLFW_RELEASE) {
-        g_mouse.buttons[button_index] = false;
+        g_mouse.buttons_down[button_index] = false;
+        g_mouse.buttons_up[button_index] = true;
     }
 
     if (button_index == 0 && action == GLFW_PRESS) {
@@ -239,15 +257,15 @@ int main(void) {
 
     mesh_init(&cube_skeleton);
 
-    mesh_t cube = {
+    mesh_t magic_plane = {
         .draw_mode = GL_TRIANGLES,
-        .vertex_count = 24,
-        .index_count = 36,
-        .vertices = cube_vertices,
-        .indices = cube_indices,
+        .vertex_count = 4,
+        .index_count = 6,
+        .vertices = magic_plane_vertices,
+        .indices = magic_plane_indices,
     };
 
-    mesh_init(&cube);
+    mesh_init(&magic_plane);
 
     LOG_INFO("Meshes initialized\n");
 
@@ -264,11 +282,27 @@ int main(void) {
         return -1;
     }
 
+    texture_t cursor = texture_load("assets/textures/cursor.png");
+    if (!cursor.id) {
+        LOG_ERROR("Failed to load cursor texture\n");
+        return -1;
+    }
+
     LOG_INFO("Texture loaded\n");
 
     mesh_instance_t plain_axes_instance = mesh_instance_new(&plain_axes);
 
     mesh_instance_t cube_skeleton_instance = mesh_instance_new(&cube_skeleton);
+
+    mesh_instance_t cursor_instance = mesh_instance_new(&magic_plane);
+    glm_mat4_identity(cursor_instance.transform);
+    glm_translate(
+        cursor_instance.transform,
+        (vec3){ (float)g_window_size[0] / 2.0f - 16.0f,
+                (float)g_window_size[1] / 2.0f - 16.0f,
+                0.0f }
+    );
+    glm_scale(cursor_instance.transform, (vec3){ 32.0f, 32.0f, 1.0f });
 
     camera_t camera =
         camera_new((vec3){ 0.0f, 0.0f, 6.0f }, (vec3){ 0.0f, 0.0f, 0.0f }, GLM_MAT4_IDENTITY);
@@ -304,12 +338,30 @@ int main(void) {
 
     LOG_INFO("World initialized\n");
 
+    mat4 ui_projection;
+    glm_ortho(
+        0.0f,
+        (float)g_window_size[0],
+        0.0f,
+        (float)g_window_size[1],
+        -1.0f,
+        1.0f,
+        ui_projection
+    );
+
+    mat4 ui_view = GLM_MAT4_IDENTITY_INIT;
+
+    LOG_INFO("UI projection and view matrices initialized\n");
+
     // Set up depth testing
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glLineWidth(4.0f);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -321,10 +373,13 @@ int main(void) {
 
     ivec3 old_selected_block = { 0, 0, 0 };
     ivec3 selected_block = { 0, 0, 0 };
+    bool block_selected = false;
 
     while (!glfwWindowShouldClose(window)) {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
 
         shader_use(&shader);
         player_set_uniforms(&g_player, &shader);
@@ -337,15 +392,29 @@ int main(void) {
 
         mesh_instance_draw(&plain_axes_instance);
 
-        mesh_instance_draw(&cube_skeleton_instance);
+        if (block_selected) {
+            mesh_instance_draw(&cube_skeleton_instance);
+        }
 
         world_draw(world);
+
+        // UI
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+
+        shader_set_mat4(&shader, "u_view", ui_view);
+        shader_set_mat4(&shader, "u_projection", ui_projection);
+
+        texture_bind(&cursor, 0);
+
+        mesh_instance_draw(&cursor_instance);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
         g_mouse.last_position[0] = g_mouse.position[0];
         g_mouse.last_position[1] = g_mouse.position[1];
+
         /* Poll for and process events */
         glfwPollEvents();
 
@@ -364,8 +433,7 @@ int main(void) {
         old_selected_block[1] = selected_block[1];
         old_selected_block[2] = selected_block[2];
 
-        bool block_selected =
-            camera_pointed_block(&g_player.camera, world, 100.0f, &selected_block);
+        block_selected = camera_pointed_block(&g_player.camera, world, 8.0f, &selected_block);
 
         if (block_selected && (old_selected_block[0] != selected_block[0] ||
                                old_selected_block[1] != selected_block[1] ||
@@ -386,8 +454,36 @@ int main(void) {
             );
         }
 
-        if (g_mouse.buttons[0]) {
+        if (g_mouse.buttons_down[0]) {
             world_try_set_block_at(world, selected_block, BLOCK_AIR);
+        }
+
+        if (block_selected && g_mouse.buttons[1]) {
+            vec3 normal;
+
+            LOG_INFO("Normal: %f %f %f\n", normal[0], normal[1], normal[2]);
+
+            ray_t ray;
+            ray_from_camera(&ray, &g_player.camera);
+
+            ray_intersect_block(ray, world, 8.0f, BLOCK_FLAG_SOLID, &selected_block, &normal);
+
+            ivec3 block_to_set = { selected_block[0] + (i32)normal[0],
+                                   selected_block[1] + (i32)normal[1],
+                                   selected_block[2] + (i32)normal[2] };
+
+            LOG_INFO(
+                "Block to set: %d %d %d\n",
+                block_to_set[0],
+                block_to_set[1],
+                block_to_set[2]
+            );
+
+            world_set_block_at(world, block_to_set, 4);
+        }
+
+        for (u32 i = 0; i < 3; i++) {
+            g_mouse.buttons[i] = false;
         }
     }
 
@@ -397,7 +493,7 @@ int main(void) {
 
     mesh_free(&plain_axes);
     mesh_free(&cube_skeleton);
-    mesh_free(&cube);
+    mesh_free(&magic_plane);
     shader_free(&shader);
 
     usize total_chunks = 0;

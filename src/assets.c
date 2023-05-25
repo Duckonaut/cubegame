@@ -54,6 +54,18 @@ void free_file(u8* buffer) {
     free(buffer);
 }
 
+void dump_buffer(const u8* buffer, usize buffer_size, usize width) {
+    printf("buffer_size: %ld\n", buffer_size);
+    printf("buffer: [\n");
+    for (usize i = 0; i < buffer_size; i++) {
+        printf("\t0x%02x,", buffer[i]);
+        if (i % width == width - 1) {
+            printf("\n");
+        }
+    }
+    printf("\n]\n");
+}
+
 texture_t texture_load(const char* path) {
     texture_t texture = { 0 };
 
@@ -71,6 +83,14 @@ texture_t texture_load(const char* path) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    LOG_DEBUG(
+        "Loaded texture %s (%dx%d:%d)\n",
+        path,
+        texture.width,
+        texture.height,
+        texture.channels
+    );
 
     if (texture.channels == 3) {
         glTexImage2D(

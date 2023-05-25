@@ -13,6 +13,8 @@ typedef struct mouse {
     vec2 delta;
     bool captured;
     bool buttons[3];
+    bool buttons_down[3];
+    bool buttons_up[3];
 } mouse_t;
 
 extern mouse_t g_mouse;

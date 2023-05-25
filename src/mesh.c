@@ -73,11 +73,12 @@ mesh_instance_t mesh_instance_new(mesh_t* mesh) {
 }
 
 void mesh_instance_draw(mesh_instance_t* instance) {
-    shader_set_mat4(&g_shader_current, "u_model", instance->transform);
-    shader_set_vec4(&g_shader_current, "u_color", instance->color);
     if (!instance->active) {
         return;
     }
+    shader_set_mat4(&g_shader_current, "u_model", instance->transform);
+    shader_set_vec4(&g_shader_current, "u_color", instance->color);
+
     mesh_draw(instance->mesh);
 }
 

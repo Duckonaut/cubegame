@@ -42,6 +42,8 @@ src = [
   'src/shader.c',
   'src/world.c',
   'src/physics.c',
+  'src/ui.c',
+  'src/game.c',
 ]
 
 inc = include_directories('include')

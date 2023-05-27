@@ -12,3 +12,4 @@ void main() {
     vec4 texColor = texture2D(u_texture, m_uv);
     o_fragColor = texColor * u_color;
 }
+

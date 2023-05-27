@@ -108,4 +108,5 @@ void player_update(player_t* player) {
 void player_set_uniforms(player_t* player, shader_t* shader) {
     shader_set_mat4(shader, "u_view", player->camera.view);
     shader_set_mat4(shader, "u_projection", player->camera.projection);
+    shader_set_vec3(shader, "u_world_eye", player->camera.position);
 }

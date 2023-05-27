@@ -493,6 +493,15 @@ void world_get_chunk_position(ivec3 position, ivec3 chunk_position) {
         position[2] >= 0 ? position[2] / CHUNK_SIZE : (position[2] + 1) / CHUNK_SIZE - 1;
 }
 
+void world_get_position_in_chunk(ivec3 position, ivec3 position_in_chunk) {
+    position_in_chunk[0] =
+        position[0] >= 0 ? position[0] % CHUNK_SIZE : CHUNK_SIZE + (position[0] % CHUNK_SIZE);
+    position_in_chunk[1] =
+        position[1] >= 0 ? position[1] % CHUNK_SIZE : CHUNK_SIZE + (position[1] % CHUNK_SIZE);
+    position_in_chunk[2] =
+        position[2] >= 0 ? position[2] % CHUNK_SIZE : CHUNK_SIZE + (position[2] % CHUNK_SIZE);
+}
+
 block_t* world_get_block_at(world_t* world, ivec3 position) {
     ivec3 chunk_position = { 0 };
 
@@ -503,12 +512,15 @@ block_t* world_get_block_at(world_t* world, ivec3 position) {
         return NULL;
     }
 
-    ivec3 block_position = { position[0] % CHUNK_SIZE,
-                             position[1] % CHUNK_SIZE,
-                             position[2] % CHUNK_SIZE };
+    ivec3 block_position_in_chunk;
 
-    return &chunk->blocks
-                [CHUNK_POS_TO_INDEX(block_position[0], block_position[1], block_position[2])];
+    world_get_position_in_chunk(position, block_position_in_chunk);
+
+    return &chunk->blocks[CHUNK_POS_TO_INDEX(
+        block_position_in_chunk[0],
+        block_position_in_chunk[1],
+        block_position_in_chunk[2]
+    )];
 }
 
 void world_set_block_at(world_t* world, ivec3 position, block_id_t block) {
@@ -518,9 +530,9 @@ void world_set_block_at(world_t* world, ivec3 position, block_id_t block) {
 
     chunk_t* chunk = world_get_or_load_chunk(world, chunk_position);
 
-    ivec3 block_position = { position[0] % CHUNK_SIZE,
-                             position[1] % CHUNK_SIZE,
-                             position[2] % CHUNK_SIZE };
+    ivec3 block_position;
+
+    world_get_position_in_chunk(position, block_position);
 
     chunk_set_block(chunk, world, block_position, block);
 }
@@ -536,9 +548,9 @@ void world_try_set_block_at(world_t* world, ivec3 position, block_id_t block) {
         return;
     }
 
-    ivec3 block_position = { position[0] % CHUNK_SIZE,
-                             position[1] % CHUNK_SIZE,
-                             position[2] % CHUNK_SIZE };
+    ivec3 block_position;
+
+    world_get_position_in_chunk(position, block_position);
 
     chunk_set_block(chunk, world, block_position, block);
 

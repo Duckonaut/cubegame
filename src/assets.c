@@ -13,6 +13,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#define ASSET_DATA_IMPLEMENTATION
+#include "asset_data.h"
+
 texture_t g_magic_pixel;
 
 u8* read_file(const char* path, usize* size) {
@@ -130,7 +133,77 @@ texture_t texture_load(const char* path) {
     return texture;
 }
 
-texture_t texture_load_from_memory(u8* data, i32 width, i32 height, i32 channels) {
+texture_t texture_load_from_memory(const u8* data, usize size) {
+    texture_t texture = { 0 };
+
+    u8* image_data = stbi_load_from_memory(
+        data,
+        (int)size,
+        &texture.width,
+        &texture.height,
+        &texture.channels,
+        0
+    );
+
+    if (!image_data) {
+        LOG_ERROR("Failed to load texture from memory\n");
+        return texture;
+    }
+
+    glGenTextures(1, &texture.id);
+    glBindTexture(GL_TEXTURE_2D, texture.id);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    LOG_DEBUG(
+        "Loaded texture from memory (%dx%d:%d)\n",
+        texture.width,
+        texture.height,
+        texture.channels
+    );
+
+    if (texture.channels == 3) {
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGB,
+            texture.width,
+            texture.height,
+            0,
+            GL_RGB,
+            GL_UNSIGNED_BYTE,
+            image_data
+        );
+    } else if (texture.channels == 4) {
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGBA,
+            texture.width,
+            texture.height,
+            0,
+            GL_RGBA,
+            GL_UNSIGNED_BYTE,
+            image_data
+        );
+    } else {
+        LOG_ERROR("Unsupported texture format\n");
+        stbi_image_free(image_data);
+        texture.id = 0;
+        return texture;
+    }
+
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    stbi_image_free(image_data);
+
+    return texture;
+}
+
+texture_t texture_load_from_memory_raw(u8* data, i32 width, i32 height, i32 channels) {
     texture_t texture = { 0 };
 
     texture.width = width;

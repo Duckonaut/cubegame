@@ -30,7 +30,7 @@ void mesh_init(mesh_t* mesh) {
         GL_FLOAT,
         GL_FALSE,
         sizeof(vertex_t),
-        (void*)offsetof(vertex_t, color)
+        (void*)offsetof(vertex_t, normal)
     );
 
     glEnableVertexAttribArray(2);
@@ -82,7 +82,7 @@ void mesh_instance_draw(mesh_instance_t* instance) {
     mesh_draw(instance->mesh);
 }
 
-void mesh_instance_batch_draw(mesh_instance_t *instances, usize count) {
+void mesh_instance_batch_draw(mesh_instance_t* instances, usize count) {
     if (count == 0) {
         return;
     }

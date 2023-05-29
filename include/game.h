@@ -16,6 +16,7 @@ typedef struct content {
 
     shader_t sprite_shader;
     shader_t world_shader;
+    shader_t gizmo_shader;
     shader_t ui_shader;
 
     mesh_t quad;

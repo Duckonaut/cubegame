@@ -2,7 +2,7 @@
 
 out vec4 o_fragColor;
 
-in vec3 m_color;
+in vec3 m_normal;
 in vec2 m_uv;
 
 uniform sampler2D u_texture;

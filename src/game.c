@@ -1,5 +1,6 @@
 #include "game.h"
 #include "assets.h"
+#include "asset_data.h"
 #include "camera.h"
 #include "globals.h"
 #include "log.h"
@@ -140,7 +141,9 @@ int game_load_content(void) {
 
     LOG_INFO("Meshes initialized\n");
 
-    texture_t atlas = texture_load("assets/textures/atlas.png");
+    texture_t atlas =
+        texture_load_from_memory(a_asset_data.textures.atlas, a_asset_data.textures.atlas_len);
+
     if (!atlas.id) {
         LOG_ERROR("Failed to load texture\n");
         return -1;
@@ -149,13 +152,17 @@ int game_load_content(void) {
     g_game.content.atlas = atlas;
 
     u8 magic_pixel_data[4] = { 255, 255, 255, 255 };
-    g_magic_pixel = texture_load_from_memory(magic_pixel_data, 1, 1, 4);
+    g_magic_pixel = texture_load_from_memory_raw(magic_pixel_data, 1, 1, 4);
     if (!g_magic_pixel.id) {
         LOG_ERROR("Failed to create magic pixel\n");
         return -1;
     }
 
-    texture_t cursor = texture_load("assets/textures/cursor.png");
+    texture_t cursor = texture_load_from_memory(
+        a_asset_data.textures.cursor,
+        a_asset_data.textures.cursor_len
+    );
+
     if (!cursor.id) {
         LOG_ERROR("Failed to load cursor texture\n");
         return -1;
@@ -165,13 +172,16 @@ int game_load_content(void) {
 
     LOG_INFO("Textures loaded\n");
 
-    shader_t shader = shader_from_assets("shaders/ui_vert.glsl", "shaders/ui_frag.glsl");
+    shader_t shader = shader_new(a_asset_data.shaders.ui_vert, a_asset_data.shaders.ui_frag);
 
     g_game.content.ui_shader = shader;
     g_game.content.sprite_shader = shader;
 
     g_game.content.world_shader =
-        shader_from_assets("shaders/world_vert.glsl", "shaders/world_frag.glsl");
+        shader_new(a_asset_data.shaders.world_vert, a_asset_data.shaders.world_frag);
+
+    g_game.content.gizmo_shader =
+        shader_new(a_asset_data.shaders.world_vert, a_asset_data.shaders.gizmo_frag);
 
     LOG_INFO("Shader initialized\n");
 
@@ -182,6 +192,10 @@ int game_init(void) {
     g_game.instances.plain_axes_instance = mesh_instance_new(&g_game.content.plain_axes);
 
     g_game.instances.cube_skeleton_instance = mesh_instance_new(&g_game.content.cube_skeleton);
+    g_game.instances.cube_skeleton_instance.color[0] = 0.0f;
+    g_game.instances.cube_skeleton_instance.color[1] = 0.0f;
+    g_game.instances.cube_skeleton_instance.color[2] = 0.0f;
+    g_game.instances.cube_skeleton_instance.color[3] = 1.0f;
 
     LOG_INFO("Mesh instances initialized\n");
 
@@ -203,10 +217,10 @@ int game_init(void) {
         camera_new((vec3){ 0.0f, 0.0f, 6.0f }, (vec3){ 0.0f, 0.0f, 0.0f }, GLM_MAT4_IDENTITY);
 
     glm_perspective(
-        glm_rad(90.0f),
+        glm_rad(120.0f),
         (float)g_window_size[0] / (float)g_window_size[1],
         0.1f,
-        100.0f,
+        400.0f,
         camera.projection
     );
 
@@ -297,19 +311,46 @@ void game_draw(void) {
     shader_use(&g_game.content.world_shader);
     player_set_uniforms(&g_player, &g_game.content.world_shader);
 
+    shader_set_vec3(&g_game.content.world_shader, "u_light_dir", (vec3){ 1.0f, 1.0f, 1.0f });
+
+    shader_set_vec4(
+        &g_game.content.world_shader,
+        "u_ambient_color",
+        (vec4){ 0.3f, 0.3f, 0.3f, 1.0f }
+    );
+
+    shader_set_vec4(
+        &g_game.content.world_shader,
+        "u_fog_color",
+        (vec4){ 0.5f, 0.8f, 1.0f, 1.0f }
+    );
+
+    shader_set_vec4(&g_game.content.world_shader, "u_color", (vec4){ 1.0f, 1.0f, 1.0f, 1.0f });
+
+    shader_set_float(&g_game.content.world_shader, "u_fog_start", 0.0f);
+    shader_set_float(&g_game.content.world_shader, "u_fog_end", 200.0f);
+    shader_set_float(&g_game.content.world_shader, "u_fog_density", 0.0001f);
+
     if (g_debug_tools.no_textures) {
         texture_bind(&g_magic_pixel, 0);
     } else {
         texture_bind(&g_game.content.atlas, 0);
     }
 
+    world_draw(g_game.world);
+
+    shader_use(&g_game.content.gizmo_shader);
+    player_set_uniforms(&g_player, &g_game.content.gizmo_shader);
+
+    shader_set_float(&g_game.content.gizmo_shader, "u_fog_start", 0.0f);
+    shader_set_float(&g_game.content.gizmo_shader, "u_fog_end", 200.0f);
+    shader_set_float(&g_game.content.gizmo_shader, "u_fog_density", 0.0001f);
+
     mesh_instance_draw(&g_game.instances.plain_axes_instance);
 
     if (g_player.block_selected) {
         mesh_instance_draw(&g_game.instances.cube_skeleton_instance);
     }
-
-    world_draw(g_game.world);
 }
 
 void game_draw_debug(void) {}

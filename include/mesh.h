@@ -7,7 +7,7 @@
 
 typedef struct vertex {
     vec3 position;
-    vec3 color;
+    vec3 normal;
     vec2 uv;
 } vertex_t;
 

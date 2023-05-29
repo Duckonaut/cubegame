@@ -4,6 +4,7 @@
 #include "mesh.h"
 #include "player.h"
 #include "shader.h"
+#include "types.h"
 #include <cglm/affine-pre.h>
 #include <cglm/ivec3.h>
 #include <cglm/mat4.h>
@@ -202,6 +203,12 @@ void block_mesh_face(mesh_t* mesh, ivec3 position, block_face_t face, block_t bl
             vertices[3].position[0] = (float)position[0];
             vertices[3].position[1] = (float)position[1];
             vertices[3].position[2] = (float)position[2];
+
+            for (i32 i = 0; i < 4; i++) {
+                vertices[i].normal[0] = -1.0f;
+                vertices[i].normal[1] = 0.0f;
+                vertices[i].normal[2] = 0.0f;
+            }
             break;
         case BLOCK_FACE_RIGHT:
             vertices[0].position[0] = (float)position[0] + 1.0f;
@@ -219,6 +226,12 @@ void block_mesh_face(mesh_t* mesh, ivec3 position, block_face_t face, block_t bl
             vertices[3].position[0] = (float)position[0] + 1.0f;
             vertices[3].position[1] = (float)position[1];
             vertices[3].position[2] = (float)position[2] + 1.0f;
+
+            for (i32 i = 0; i < 4; i++) {
+                vertices[i].normal[0] = 1.0f;
+                vertices[i].normal[1] = 0.0f;
+                vertices[i].normal[2] = 0.0f;
+            }
             break;
         case BLOCK_FACE_BOTTOM:
             vertices[0].position[0] = (float)position[0];
@@ -236,6 +249,12 @@ void block_mesh_face(mesh_t* mesh, ivec3 position, block_face_t face, block_t bl
             vertices[3].position[0] = (float)position[0];
             vertices[3].position[1] = (float)position[1];
             vertices[3].position[2] = (float)position[2] + 1.0f;
+
+            for (i32 i = 0; i < 4; i++) {
+                vertices[i].normal[0] = 0.0f;
+                vertices[i].normal[1] = -1.0f;
+                vertices[i].normal[2] = 0.0f;
+            }
             break;
         case BLOCK_FACE_TOP:
             vertices[0].position[0] = (float)position[0];
@@ -253,6 +272,12 @@ void block_mesh_face(mesh_t* mesh, ivec3 position, block_face_t face, block_t bl
             vertices[3].position[0] = (float)position[0] + 1.0f;
             vertices[3].position[1] = (float)position[1] + 1.0f;
             vertices[3].position[2] = (float)position[2];
+
+            for (i32 i = 0; i < 4; i++) {
+                vertices[i].normal[0] = 0.0f;
+                vertices[i].normal[1] = 1.0f;
+                vertices[i].normal[2] = 0.0f;
+            }
             break;
         case BLOCK_FACE_FRONT:
             vertices[0].position[0] = (float)position[0];
@@ -270,6 +295,12 @@ void block_mesh_face(mesh_t* mesh, ivec3 position, block_face_t face, block_t bl
             vertices[3].position[0] = (float)position[0] + 1.0f;
             vertices[3].position[1] = (float)position[1];
             vertices[3].position[2] = (float)position[2];
+
+            for (i32 i = 0; i < 4; i++) {
+                vertices[i].normal[0] = 0.0f;
+                vertices[i].normal[1] = 0.0f;
+                vertices[i].normal[2] = -1.0f;
+            }
             break;
         case BLOCK_FACE_BACK:
             vertices[0].position[0] = (float)position[0] + 1.0f;
@@ -287,14 +318,16 @@ void block_mesh_face(mesh_t* mesh, ivec3 position, block_face_t face, block_t bl
             vertices[3].position[0] = (float)position[0];
             vertices[3].position[1] = (float)position[1];
             vertices[3].position[2] = (float)position[2] + 1.0f;
+
+            for (i32 i = 0; i < 4; i++) {
+                vertices[i].normal[0] = 0.0f;
+                vertices[i].normal[1] = 0.0f;
+                vertices[i].normal[2] = 1.0f;
+            }
             break;
     }
 
     for (i32 i = 0; i < 4; i++) {
-        vertices->color[0] = vertices->position[0] > (float)position[0];
-        vertices->color[1] = vertices->position[1] > (float)position[1];
-        vertices->color[2] = vertices->position[2] > (float)position[2];
-
         if (face == BLOCK_FACE_TOP && (flags & BLOCK_FLAG_TEXTURE_TOP)) {
             ivec2 atlas_pos = { BLOCK_ID_TO_ATLAS_POS_TOP(block.id) };
             vec2 uv = ATLAS_TEXTURE_SLOT_UV(atlas_pos[0], atlas_pos[1]);

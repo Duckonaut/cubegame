@@ -49,7 +49,8 @@ typedef struct texture {
 extern texture_t g_magic_pixel;
 
 texture_t texture_load(const char* path);
-texture_t texture_load_from_memory(u8* data, i32 width, i32 height, i32 channels);
+texture_t texture_load_from_memory(const u8* data, usize size);
+texture_t texture_load_from_memory_raw(u8* data, i32 width, i32 height, i32 channels);
 
 void texture_free(texture_t* texture);
 

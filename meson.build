@@ -31,6 +31,26 @@ if host_machine.system() == 'linux'
   deps += m_dep
 endif
 
+asset_dir = join_paths(meson.current_source_dir(), 'assets')
+
+finch = find_program('finch', required : true)
+
+assets = [
+  'assets/shaders/gizmo_frag.glsl',
+  'assets/shaders/ui_frag.glsl',
+  'assets/shaders/ui_vert.glsl',
+  'assets/shaders/world_frag.glsl',
+  'assets/shaders/world_vert.glsl',
+  'assets/textures/atlas.png',
+  'assets/textures/cursor.png',
+]
+
+asset_data = custom_target(
+  'asset_data.h',
+  command : [finch, asset_dir, 'asset_data', '-p', 'a_'],
+  output : ['asset_data.h'],
+  input : assets,
+)
 
 src = [
   'src/assets.c',
@@ -44,6 +64,7 @@ src = [
   'src/physics.c',
   'src/ui.c',
   'src/game.c',
+  asset_data
 ]
 
 inc = include_directories('include')
@@ -56,4 +77,3 @@ executable(
   dependencies : deps,
   install : true
 )
-

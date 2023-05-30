@@ -28,8 +28,9 @@
     ((id) % ATLAS_TEXTURE_SLOT_COUNT), (((id) / ATLAS_TEXTURE_SLOT_COUNT) * 3 +                \
                                         ((block_flags[id] & BLOCK_FLAG_TEXTURE_TOP) ? 1 : 0))
 #define BLOCK_ID_TO_ATLAS_POS_BOTTOM(id)                                                       \
-    ((id) % ATLAS_TEXTURE_SLOT_COUNT), (((id) / ATLAS_TEXTURE_SLOT_COUNT) * 3 +                \
-                                        ((block_flags[id] & BLOCK_FLAG_TEXTURE_BOTTOM) ? 2 : 0))
+    ((id) % ATLAS_TEXTURE_SLOT_COUNT),                                                         \
+        (((id) / ATLAS_TEXTURE_SLOT_COUNT) * 3 +                                               \
+         ((block_flags[id] & BLOCK_FLAG_TEXTURE_BOTTOM) ? 2 : 0))
 
 typedef u8 block_id_t;
 typedef enum block_face {
@@ -68,7 +69,7 @@ typedef struct block {
     i32 mesh_index_count;
 } block_t;
 
-void block_mesh_face(mesh_t* mesh, ivec3 position, block_face_t face, block_t block);
+void block_mesh_face(mesh_t* mesh, ivec3 position, block_face_t face, block_t* block);
 
 typedef struct chunk {
     ivec3 position;
@@ -96,7 +97,7 @@ void chunk_generate(chunk_t* chunk);
 
 // Can be used to remove a block from a chunk, ie. set it to air
 void chunk_set_block(chunk_t* chunk, world_t* world, ivec3 position, block_id_t id);
-block_t chunk_get_block(chunk_t* chunk, ivec3 position);
+block_t* chunk_get_block(chunk_t* chunk, ivec3 position);
 
 // Mesh a chunk in place
 // Takes into account the chunk's position in the world
@@ -104,7 +105,12 @@ block_t chunk_get_block(chunk_t* chunk, ivec3 position);
 void chunk_mesh(chunk_t* chunk, world_t* world);
 
 void chunk_remesh(chunk_t* chunk, world_t* world);
-void chunk_remesh_block(chunk_t* chunk, world_t* world, ivec3 position);
+void chunk_remesh_block(
+    chunk_t* chunk,
+    world_t* world,
+    chunk_t* neighbor_chunks[6],
+    ivec3 position
+);
 
 // Destroy a chunk's mesh in place, freeing all memory associated with it
 // Does not free the chunk itself or its blocks
@@ -139,3 +145,7 @@ void world_unload_chunk(world_t* world, ivec3 position);
 void world_unload_all_chunks(world_t* world);
 
 void world_draw(world_t* world);
+
+void world_get_chunk_position(ivec3 position, ivec3 chunk_position);
+void world_get_chunk_positionf(vec3 position, ivec3 chunk_position);
+void world_get_position_in_chunk(ivec3 position, ivec3 position_in_chunk);

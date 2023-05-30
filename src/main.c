@@ -20,6 +20,7 @@
 #include "mesh.h"
 #include "assets.h"
 #include "world.h"
+#include "asset_data.h"
 
 static void glfw_error_callback(int error, const char* description) {
     LOG_ERROR("GLFW Error %d: %s", error, description);
@@ -115,6 +116,8 @@ int main(void) {
         glfwTerminate();
         return -1;
     }
+
+    LOG_INFO("statically included asset data size: %zu\n", sizeof(a_asset_data));
 
     LOG_INFO("Window created\n");
 
@@ -253,7 +256,7 @@ int main(void) {
             for (i32 j = 0; j < CHUNK_SIZE; j++) {
                 for (i32 k = 0; k < CHUNK_SIZE; k++) {
                     for (i32 l = 0; l < CHUNK_SIZE; l++) {
-                        if (chunk_get_block(chunk, (ivec3){ j, k, l }).id != BLOCK_AIR) {
+                        if (chunk_get_block(chunk, (ivec3){ j, k, l })->id != BLOCK_AIR) {
                             total_blocks++;
                         }
                     }

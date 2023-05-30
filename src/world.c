@@ -10,6 +10,7 @@
 #include <cglm/mat4.h>
 #include <cglm/types.h>
 #include <cglm/vec3.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -49,8 +50,15 @@ void chunk_forget(chunk_t* chunk) {
 void chunk_generate(chunk_t* chunk) {
     for (i32 x = 0; x < CHUNK_SIZE; x++) {
         for (i32 z = 0; z < CHUNK_SIZE; z++) {
-            i32 height = 30;
-            i32 rock_height = 20;
+            i32 realx = x + chunk->position[0] * CHUNK_SIZE;
+            i32 realz = z + chunk->position[2] * CHUNK_SIZE;
+
+            i32 height =
+                10 + (i32)(3 * sin((float)realx / 8.4f) * cos((float)realz / 12.0f) +
+                           (5 * sin((float)realx / 7.6f) * cos((float)realz / 5.6f) +
+                            (3 * sin((float)realx / 37.4f) * cos((float)realz / 42.0f))));
+
+            i32 rock_height = height - 5;
 
             for (i32 y = 0; y < CHUNK_SIZE; y++) {
                 i32 index = CHUNK_POS_TO_INDEX(x, y, z);
@@ -75,9 +83,9 @@ void chunk_set_block(chunk_t* chunk, world_t* world, ivec3 position, block_id_t 
     chunk_remesh(chunk, world);
 }
 
-block_t chunk_get_block(chunk_t* chunk, ivec3 position) {
+block_t* chunk_get_block(chunk_t* chunk, ivec3 position) {
     i32 index = CHUNK_POS_TO_INDEX(position[0], position[1], position[2]);
-    return chunk->blocks[index];
+    return &chunk->blocks[index];
 }
 
 void chunk_mesh(chunk_t* chunk, world_t* world) {
@@ -93,10 +101,36 @@ void chunk_mesh(chunk_t* chunk, world_t* world) {
     chunk->mesh.vertex_count = 0;
     chunk->mesh.index_count = 0;
 
+    chunk_t* neighbors[6];
+    neighbors[0] = world_get_chunk(
+        world,
+        (ivec3){ chunk->position[0] - 1, chunk->position[1], chunk->position[2] }
+    );
+    neighbors[1] = world_get_chunk(
+        world,
+        (ivec3){ chunk->position[0] + 1, chunk->position[1], chunk->position[2] }
+    );
+    neighbors[2] = world_get_chunk(
+        world,
+        (ivec3){ chunk->position[0], chunk->position[1] - 1, chunk->position[2] }
+    );
+    neighbors[3] = world_get_chunk(
+        world,
+        (ivec3){ chunk->position[0], chunk->position[1] + 1, chunk->position[2] }
+    );
+    neighbors[4] = world_get_chunk(
+        world,
+        (ivec3){ chunk->position[0], chunk->position[1], chunk->position[2] - 1 }
+    );
+    neighbors[5] = world_get_chunk(
+        world,
+        (ivec3){ chunk->position[0], chunk->position[1], chunk->position[2] + 1 }
+    );
+
     for (i32 x = 0; x < CHUNK_SIZE; x++) {
         for (i32 y = 0; y < CHUNK_SIZE; y++) {
             for (i32 z = 0; z < CHUNK_SIZE; z++) {
-                chunk_remesh_block(chunk, world, (ivec3){ x, y, z });
+                chunk_remesh_block(chunk, world, neighbors, (ivec3){ x, y, z });
             }
         }
     }
@@ -119,13 +153,18 @@ void chunk_remesh(chunk_t* chunk, world_t* world) {
     chunk_mesh(chunk, world);
 }
 
-void chunk_remesh_block(chunk_t* chunk, world_t* world, ivec3 pos) {
-    block_t block = chunk_get_block(chunk, pos);
-    if (block.id == BLOCK_AIR) {
+void chunk_remesh_block(
+    chunk_t* chunk,
+    world_t* world,
+    chunk_t* neighbor_chunks[6],
+    ivec3 pos
+) {
+    block_t* block = chunk_get_block(chunk, pos);
+    if (block->id == BLOCK_AIR) {
         return;
     }
 
-    block_flags_t flags = block_flags[block.id];
+    block_flags_t flags = block_flags[block->id];
     if (!(flags & BLOCK_FLAG_MESHED)) {
         return;
     }
@@ -138,8 +177,8 @@ void chunk_remesh_block(chunk_t* chunk, world_t* world, ivec3 pos) {
         { -1, 0, 0 }, { 1, 0, 0 }, { 0, -1, 0 }, { 0, 1, 0 }, { 0, 0, -1 }, { 0, 0, 1 },
     };
 
-    block.mesh_index_offset = chunk->mesh.index_count;
-    block.mesh_vertex_offset = chunk->mesh.vertex_count;
+    block->mesh_index_offset = chunk->mesh.index_count;
+    block->mesh_vertex_offset = chunk->mesh.vertex_count;
 
     for (i32 i = 0; i < 6; i++) {
         ivec3 neighbor_pos = { 0 };
@@ -159,10 +198,20 @@ void chunk_remesh_block(chunk_t* chunk, world_t* world, ivec3 pos) {
                     neighbor_block_world_pos
                 );
 
-                block_t* neighbor = world_get_block_at(world, neighbor_block_world_pos);
+                ivec3 neighbor_chunk_pos;
+                world_get_position_in_chunk(neighbor_block_world_pos, neighbor_chunk_pos);
 
-                if (neighbor == NULL || neighbor->id == BLOCK_AIR ||
-                    (block_flags[neighbor->id] & BLOCK_FLAG_TRANSPARENT)) {
+                chunk_t* neighbor = neighbor_chunks[i];
+
+                if (neighbor == NULL) {
+                    block_mesh_face(&chunk->mesh, block_pos, (block_face_t)i, block);
+                    continue;
+                }
+
+                block_t* neighbor_block = chunk_get_block(neighbor, neighbor_chunk_pos);
+
+                if (neighbor_block->id == BLOCK_AIR ||
+                    (block_flags[neighbor_block->id] & BLOCK_FLAG_TRANSPARENT)) {
                     block_mesh_face(&chunk->mesh, block_pos, (block_face_t)i, block);
                 }
             } else {
@@ -171,18 +220,18 @@ void chunk_remesh_block(chunk_t* chunk, world_t* world, ivec3 pos) {
             continue;
         }
 
-        block_t neighbor = chunk_get_block(chunk, neighbor_pos);
-        if (neighbor.id == BLOCK_AIR || (block_flags[neighbor.id] & BLOCK_FLAG_TRANSPARENT)) {
+        block_t* neighbor = chunk_get_block(chunk, neighbor_pos);
+        if (neighbor->id == BLOCK_AIR || (block_flags[neighbor->id] & BLOCK_FLAG_TRANSPARENT)) {
             block_mesh_face(&chunk->mesh, block_pos, (block_face_t)i, block);
         }
     }
 
-    block.mesh_index_count = chunk->mesh.index_count - block.mesh_index_offset;
-    block.mesh_vertex_count = chunk->mesh.vertex_count - block.mesh_vertex_offset;
+    block->mesh_index_count = chunk->mesh.index_count - block->mesh_index_offset;
+    block->mesh_vertex_count = chunk->mesh.vertex_count - block->mesh_vertex_offset;
 }
 
-void block_mesh_face(mesh_t* mesh, ivec3 position, block_face_t face, block_t block) {
-    block_flags_t flags = block_flags[block.id];
+void block_mesh_face(mesh_t* mesh, ivec3 position, block_face_t face, block_t* block) {
+    block_flags_t flags = block_flags[block->id];
 
     vertex_t vertices[4] = { 0 };
 
@@ -329,19 +378,19 @@ void block_mesh_face(mesh_t* mesh, ivec3 position, block_face_t face, block_t bl
 
     for (i32 i = 0; i < 4; i++) {
         if (face == BLOCK_FACE_TOP && (flags & BLOCK_FLAG_TEXTURE_TOP)) {
-            ivec2 atlas_pos = { BLOCK_ID_TO_ATLAS_POS_TOP(block.id) };
+            ivec2 atlas_pos = { BLOCK_ID_TO_ATLAS_POS_TOP(block->id) };
             vec2 uv = ATLAS_TEXTURE_SLOT_UV(atlas_pos[0], atlas_pos[1]);
 
             vertices[i].uv[0] = uv[0] + (float)(i == 1 || i == 2) / ATLAS_TEXTURE_SLOT_COUNT;
             vertices[i].uv[1] = uv[1] + (float)(i == 2 || i == 3) / ATLAS_TEXTURE_SLOT_COUNT;
         } else if (face == BLOCK_FACE_BOTTOM && (flags & BLOCK_FLAG_TEXTURE_BOTTOM)) {
-            ivec2 atlas_pos = { BLOCK_ID_TO_ATLAS_POS_BOTTOM(block.id) };
+            ivec2 atlas_pos = { BLOCK_ID_TO_ATLAS_POS_BOTTOM(block->id) };
             vec2 uv = ATLAS_TEXTURE_SLOT_UV(atlas_pos[0], atlas_pos[1]);
 
             vertices[i].uv[0] = uv[0] + (float)(i == 1 || i == 2) / ATLAS_TEXTURE_SLOT_COUNT;
             vertices[i].uv[1] = uv[1] + (float)(i == 2 || i == 3) / ATLAS_TEXTURE_SLOT_COUNT;
         } else {
-            ivec2 atlas_pos = { BLOCK_ID_TO_ATLAS_POS(block.id) };
+            ivec2 atlas_pos = { BLOCK_ID_TO_ATLAS_POS(block->id) };
             vec2 uv = ATLAS_TEXTURE_SLOT_UV(atlas_pos[0], atlas_pos[1]);
 
             vertices[i].uv[0] = uv[0] + (float)(i == 0 || i == 1) / ATLAS_TEXTURE_SLOT_COUNT;
@@ -524,6 +573,15 @@ void world_get_chunk_position(ivec3 position, ivec3 chunk_position) {
         position[1] >= 0 ? position[1] / CHUNK_SIZE : (position[1] + 1) / CHUNK_SIZE - 1;
     chunk_position[2] =
         position[2] >= 0 ? position[2] / CHUNK_SIZE : (position[2] + 1) / CHUNK_SIZE - 1;
+}
+
+void world_get_chunk_positionf(vec3 position, ivec3 chunk_position) {
+    chunk_position[0] = position[0] >= 0 ? (i32)position[0] / CHUNK_SIZE
+                                         : ((i32)position[0] + 1) / CHUNK_SIZE - 1;
+    chunk_position[1] = position[1] >= 0 ? (i32)position[1] / CHUNK_SIZE
+                                         : ((i32)position[1] + 1) / CHUNK_SIZE - 1;
+    chunk_position[2] = position[2] >= 0 ? (i32)position[2] / CHUNK_SIZE
+                                         : ((i32)position[2] + 1) / CHUNK_SIZE - 1;
 }
 
 void world_get_position_in_chunk(ivec3 position, ivec3 position_in_chunk) {

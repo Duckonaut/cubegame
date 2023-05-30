@@ -34,6 +34,16 @@ bool ray_intersect_block(
     glm_vec3_scale(r.direction, range, end);
     glm_vec3_add(end, r.origin, end);
 
+    ivec3 current_chunk_pos;
+    world_get_chunk_positionf(current, current_chunk_pos);
+
+    ivec3 old_chunk_pos;
+    glm_ivec3_copy(current_chunk_pos, old_chunk_pos);
+
+    chunk_t* chunk = world_get_chunk(world, current_chunk_pos);
+
+    ivec3 block_pos_in_chunk;
+
     while (traveled < range) {
         glm_vec3_add(current, step, current);
         traveled += 0.05f;
@@ -42,11 +52,22 @@ bool ray_intersect_block(
         (*block_pos)[1] = (int)floorf(current[1]);
         (*block_pos)[2] = (int)floorf(current[2]);
 
-        block_t* block = world_get_block_at(world, *block_pos);
+        world_get_chunk_position(*block_pos, current_chunk_pos);
 
-        if (block == NULL) {
+        if (current_chunk_pos[0] != old_chunk_pos[0] ||
+            current_chunk_pos[1] != old_chunk_pos[1] ||
+            current_chunk_pos[2] != old_chunk_pos[2]) {
+            chunk = world_get_chunk(world, current_chunk_pos);
+            glm_ivec3_copy(current_chunk_pos, old_chunk_pos);
+        }
+
+        if (chunk == NULL) {
             continue;
         }
+
+        world_get_position_in_chunk(*block_pos, block_pos_in_chunk);
+
+        block_t* block = chunk_get_block(chunk, block_pos_in_chunk);
 
         if (block->id != BLOCK_AIR && (block_flags[block->id] & flags) != 0) {
             if (normal != NULL) {

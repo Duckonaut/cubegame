@@ -15,7 +15,7 @@
 // Disable clang-format for this block
 // clang-format off
 
-vertex_t plain_axes_vertices[] = {
+const vertex_t plain_axes_vertices[] = {
     { { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
     { { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
     { { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
@@ -24,11 +24,11 @@ vertex_t plain_axes_vertices[] = {
     { { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
 };
 
-u32 plain_axes_indices[] = {
+const u32 plain_axes_indices[] = {
     0, 1, 2, 3, 4, 5,
 };
 
-vertex_t cube_skeleton_vertices[] = {
+const vertex_t cube_skeleton_vertices[] = {
     // Back
     { { -0.505f, -0.505f, -0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
     { {  0.505f, -0.505f, -0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
@@ -41,13 +41,13 @@ vertex_t cube_skeleton_vertices[] = {
     { {  0.505f,  0.505f, 0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
 };
 
-u32 cube_skeleton_indices[] = {
+const u32 cube_skeleton_indices[] = {
     0, 1, 1, 3, 3, 2, 2, 0, // Back
     4, 5, 5, 7, 7, 6, 6, 4, // Front
     0, 4, 1, 5, 3, 7, 2, 6, // Sides
 };
 
-vertex_t cube_vertices[] = {
+const vertex_t cube_vertices[] = {
     // Back
     { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BL(0, 0) },
     { {  0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BR(0, 0) },
@@ -81,7 +81,7 @@ vertex_t cube_vertices[] = {
 };
 
 // for GL_TRIANGLES
-u32 cube_indices[] = {
+const u32 cube_indices[] = {
     0, 1, 2, 2, 1, 3,
     // front
     4, 6, 5, 5, 6, 7,
@@ -95,14 +95,14 @@ u32 cube_indices[] = {
     20, 21, 22, 22, 21, 23,
 };
 
-vertex_t magic_plane_vertices[] = {
+const vertex_t magic_plane_vertices[] = {
     { { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f } },
     { { 1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f } },
     { { 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } },
     { { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } },
 };
 
-u32 magic_plane_indices[] = {
+const u32 magic_plane_indices[] = {
     0, 1, 2, 2, 1, 3,
 };
 
@@ -113,8 +113,8 @@ int game_load_content(void) {
         .draw_mode = GL_LINES,
         .vertex_count = 6,
         .index_count = 6,
-        .vertices = plain_axes_vertices,
-        .indices = plain_axes_indices,
+        .vertices = (vertex_t*)plain_axes_vertices,
+        .indices = (u32*)plain_axes_indices,
     };
 
     mesh_init(&g_game.content.plain_axes);
@@ -123,8 +123,8 @@ int game_load_content(void) {
         .draw_mode = GL_LINES,
         .vertex_count = 8,
         .index_count = 24,
-        .vertices = cube_skeleton_vertices,
-        .indices = cube_skeleton_indices,
+        .vertices = (vertex_t*)cube_skeleton_vertices,
+        .indices = (u32*)cube_skeleton_indices,
     };
 
     mesh_init(&g_game.content.cube_skeleton);
@@ -133,8 +133,8 @@ int game_load_content(void) {
         .draw_mode = GL_TRIANGLES,
         .vertex_count = 4,
         .index_count = 6,
-        .vertices = magic_plane_vertices,
-        .indices = magic_plane_indices,
+        .vertices = (vertex_t*)magic_plane_vertices,
+        .indices = (u32*)magic_plane_indices,
     };
 
     mesh_init(&g_game.content.quad);

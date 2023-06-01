@@ -17,6 +17,10 @@ if cc.get_id() == 'gcc' or cc.get_id() == 'clang'
   add_project_arguments('-Wconversion', '-Werror', '-g', language : 'c')
 endif
 
+if get_option('buildtype') == 'release'
+  add_project_arguments('-DRELESE', language : 'c')
+endif
+
 glfw_dep = dependency('glfw3', required : true, static : static_link_libs)
 cglm_dep = dependency('cglm', required : true, static : static_link_libs)
 glew_dep = dependency('glew', required : true, static : static_link_libs)
@@ -41,8 +45,11 @@ assets = [
   'assets/shaders/ui_vert.glsl',
   'assets/shaders/world_frag.glsl',
   'assets/shaders/world_vert.glsl',
+  'assets/shaders/unlit_frag.glsl',
   'assets/textures/atlas.png',
   'assets/textures/cursor.png',
+  'assets/textures/ui_atlas.png',
+  'assets/textures/sun.png',
 ]
 
 asset_data = custom_target(
@@ -64,11 +71,12 @@ src = [
   'src/physics.c',
   'src/ui.c',
   'src/game.c',
+  'src/utils.c',
   asset_data
 ]
 
 inc = include_directories('include')
-sys_inc = include_directories('libs/stb', is_system : true)
+sys_inc = include_directories('libs/stb', is_system : true) # stb_image.h
 
 executable(
   'cubegame',

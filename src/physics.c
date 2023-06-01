@@ -21,11 +21,17 @@ bool ray_intersect_block(
     float range,
     block_flags_t flags,
     ivec3* block_pos,
-    vec3* normal
+    vec3* normal,
+    float* distance
 ) {
     float traveled = 0.0f;
     vec3 current;
     glm_vec3_copy(r.origin, current);
+
+    ivec3 current_block_pos;
+    current_block_pos[0] = (int)floorf(current[0]);
+    current_block_pos[1] = (int)floorf(current[1]);
+    current_block_pos[2] = (int)floorf(current[2]);
 
     vec3 step;
     glm_vec3_scale(r.direction, 0.05f, step);
@@ -48,11 +54,11 @@ bool ray_intersect_block(
         glm_vec3_add(current, step, current);
         traveled += 0.05f;
 
-        (*block_pos)[0] = (int)floorf(current[0]);
-        (*block_pos)[1] = (int)floorf(current[1]);
-        (*block_pos)[2] = (int)floorf(current[2]);
+        current_block_pos[0] = (int)floorf(current[0]);
+        current_block_pos[1] = (int)floorf(current[1]);
+        current_block_pos[2] = (int)floorf(current[2]);
 
-        world_get_chunk_position(*block_pos, current_chunk_pos);
+        world_get_chunk_position(current_block_pos, current_chunk_pos);
 
         if (current_chunk_pos[0] != old_chunk_pos[0] ||
             current_chunk_pos[1] != old_chunk_pos[1] ||
@@ -65,7 +71,7 @@ bool ray_intersect_block(
             continue;
         }
 
-        world_get_position_in_chunk(*block_pos, block_pos_in_chunk);
+        world_get_position_in_chunk(current_block_pos, block_pos_in_chunk);
 
         block_t* block = chunk_get_block(chunk, block_pos_in_chunk);
 
@@ -73,8 +79,9 @@ bool ray_intersect_block(
             if (normal != NULL) {
                 vec3 center;
                 glm_vec3_add(
-                    (vec3
-                    ){ (float)(*block_pos)[0], (float)(*block_pos)[1], (float)(*block_pos)[2] },
+                    (vec3){ (float)(current_block_pos)[0],
+                            (float)(current_block_pos)[1],
+                            (float)(current_block_pos)[2] },
                     (vec3){ 0.5f, 0.5f, 0.5f },
                     center
                 );
@@ -98,6 +105,14 @@ bool ray_intersect_block(
                     (*normal)[1] = 0;
                     (*normal)[2] = diff[2] > 0 ? -1 : 1;
                 }
+            }
+
+            if (distance != NULL) {
+                *distance = traveled;
+            }
+
+            if (block_pos != NULL) {
+                glm_ivec3_copy(current_block_pos, *block_pos);
             }
 
             return true;

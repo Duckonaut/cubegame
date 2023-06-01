@@ -127,5 +127,5 @@ bool camera_pointed_block(
     ray_t ray;
     ray_from_camera(&ray, camera);
 
-    return ray_intersect_block(ray, world, range, BLOCK_FLAG_SOLID, block_position, NULL);
+    return ray_intersect_block(ray, world, range, BLOCK_FLAG_SOLID, block_position, NULL, NULL);
 }

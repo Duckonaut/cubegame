@@ -77,12 +77,15 @@ typedef struct chunk {
     block_t blocks[CHUNK_BLOCK_COUNT];
 } chunk_t;
 
-#define MAX_LOADED_CHUNKS 256 // 8 in X, 4 in Y, 8 in Z
+#define MAX_LOADED_CHUNKS 512 // 8 in X, 4 in Y, 8 in Z
 
 typedef struct world {
     chunk_t* chunks;
     u32 loaded_chunk_count;
     u8 chunk_slot_bitmap[MAX_LOADED_CHUNKS / 8];
+    u8 chunk_slot_remeshed_bitmap[MAX_LOADED_CHUNKS / 8];
+    u32 chunk_slot_remesh_queue[MAX_LOADED_CHUNKS];
+    u32 chunk_slot_remesh_queue_count;
 } world_t;
 
 // Initialize a chunk in place
@@ -149,3 +152,6 @@ void world_draw(world_t* world);
 void world_get_chunk_position(ivec3 position, ivec3 chunk_position);
 void world_get_chunk_positionf(vec3 position, ivec3 chunk_position);
 void world_get_position_in_chunk(ivec3 position, ivec3 position_in_chunk);
+
+void world_remesh_queue_add(world_t* world, u32 chunk_slot);
+void world_remesh_queue_process(world_t* world);

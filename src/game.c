@@ -2,6 +2,7 @@
 #include "assets.h"
 #include "asset_data.h"
 #include "camera.h"
+#include "glm_extra.h"
 #include "globals.h"
 #include "log.h"
 #include "mesh.h"
@@ -9,8 +10,13 @@
 #include "player.h"
 #include "shader.h"
 #include "ui.h"
+#include "world.h"
 #include <cglm/affine-pre.h>
 #include <cglm/cam.h>
+#include <cglm/quat.h>
+#include <cglm/types.h>
+#include <cglm/vec3.h>
+#include <cglm/mat4.h>
 
 // Disable clang-format for this block
 // clang-format off
@@ -151,6 +157,28 @@ int game_load_content(void) {
 
     g_game.content.atlas = atlas;
 
+    texture_t ui_atlas = texture_load_from_memory(
+        a_asset_data.textures.ui_atlas,
+        a_asset_data.textures.ui_atlas_len
+    );
+
+    if (!ui_atlas.id) {
+        LOG_ERROR("Failed to load ui texture\n");
+        return -1;
+    }
+
+    g_game.content.ui_atlas = ui_atlas;
+
+    texture_t sun =
+        texture_load_from_memory(a_asset_data.textures.sun, a_asset_data.textures.sun_len);
+
+    if (!ui_atlas.id) {
+        LOG_ERROR("Failed to load ui texture\n");
+        return -1;
+    }
+
+    g_game.content.sun = sun;
+
     u8 magic_pixel_data[4] = { 255, 255, 255, 255 };
     g_magic_pixel = texture_load_from_memory_raw(magic_pixel_data, 1, 1, 4);
     if (!g_magic_pixel.id) {
@@ -177,6 +205,9 @@ int game_load_content(void) {
     g_game.content.ui_shader = shader;
     g_game.content.sprite_shader = shader;
 
+    g_game.content.unlit_shader =
+        shader_new(a_asset_data.shaders.world_vert, a_asset_data.shaders.unlit_frag);
+
     g_game.content.world_shader =
         shader_new(a_asset_data.shaders.world_vert, a_asset_data.shaders.world_frag);
 
@@ -196,6 +227,8 @@ int game_init(void) {
     g_game.instances.cube_skeleton_instance.color[1] = 0.0f;
     g_game.instances.cube_skeleton_instance.color[2] = 0.0f;
     g_game.instances.cube_skeleton_instance.color[3] = 1.0f;
+
+    g_game.instances.sun_instance = mesh_instance_new(&g_game.content.quad);
 
     LOG_INFO("Mesh instances initialized\n");
 
@@ -217,7 +250,7 @@ int game_init(void) {
         camera_new((vec3){ 0.0f, 0.0f, 6.0f }, (vec3){ 0.0f, 0.0f, 0.0f }, GLM_MAT4_IDENTITY);
 
     glm_perspective(
-        glm_rad(120.0f),
+        glm_rad(90.0f),
         (float)g_window_size[0] / (float)g_window_size[1],
         0.1f,
         400.0f,
@@ -228,7 +261,7 @@ int game_init(void) {
 
     LOG_INFO("Camera initialized\n");
 
-    g_player = player_new((vec3){ 0.0f, 0.0f, 0.0f }, (vec3){ 0.0f, 0.0f, 0.0f }, camera);
+    g_player = player_new((vec3){ 48.0f, 40.0f, 48.0f }, (vec3){ 0.0f, 0.0f, 0.0f }, camera);
 
     LOG_INFO("Player initialized\n");
 
@@ -243,10 +276,14 @@ int game_init(void) {
 
     LOG_INFO("World initialized\n");
 
+    g_game.time = 0.0f;
+
     return 0;
 }
 
-void game_update(void) {
+void game_update(f32 delta_time) {
+    g_game.time += delta_time;
+
     player_update(&g_player);
 
     g_player.old_selected_block[0] = g_player.selected_block[0];
@@ -268,7 +305,7 @@ void game_update(void) {
                     (float)g_player.selected_block[2] + 0.5f }
         );
 
-        LOG_INFO(
+        LOG_DEBUG(
             "Selected block: %d %d %d\n",
             g_player.selected_block[0],
             g_player.selected_block[1],
@@ -294,7 +331,8 @@ void game_update(void) {
             8.0f,
             BLOCK_FLAG_SOLID,
             &g_player.selected_block,
-            &normal
+            &normal,
+            NULL
         );
 
         ivec3 block_to_set = { g_player.selected_block[0] + (i32)normal[0],
@@ -305,31 +343,124 @@ void game_update(void) {
 
         world_set_block_at(g_game.world, block_to_set, 4);
     }
+
+    world_remesh_queue_process(g_game.world);
 }
 
 void game_draw(void) {
-    shader_use(&g_game.content.world_shader);
-    player_set_uniforms(&g_player, &g_game.content.world_shader);
+    shader_t* current_shader = NULL;
 
-    shader_set_vec3(&g_game.content.world_shader, "u_light_dir", (vec3){ 1.0f, 1.0f, 1.0f });
+    if (g_debug_tools.no_lighting) {
+        shader_use(&g_game.content.unlit_shader);
+        current_shader = &g_game.content.unlit_shader;
+    } else {
+        shader_use(&g_game.content.world_shader);
+        current_shader = &g_game.content.world_shader;
+    }
 
-    shader_set_vec4(
-        &g_game.content.world_shader,
-        "u_ambient_color",
-        (vec4){ 0.3f, 0.3f, 0.3f, 1.0f }
+    // Get light dir based on time of day
+    f32 time_of_day =
+        fmodf(g_game.time / 1.0f, 24.0f); // 10 secons per "hour", 24 hours per day
+
+    if (g_debug_tools.force_day) {
+        time_of_day = 12.0f;
+    }
+
+    // 0.0f is midnight, 12.0f is noon, 24.0f is midnight
+    // 6.0f is dawn, 18.0f is dusk
+    vec3 light_dir = { 1.0f, 0.0f, 0.0f }; // At dawn, light comes from the west
+
+    f32 light_angle = glm_rad(180.0f * (time_of_day - 6.0f) / 12.0f);
+
+    glm_vec3_rotate(light_dir, light_angle, (vec3){ 0.0f, 0.0f, 1.0f });
+
+    // rotate it around the y axis so it's not boring
+    glm_vec3_rotate(light_dir, glm_rad(30.0f), (vec3){ 0.0f, 1.0f, 0.0f });
+
+    shader_set_vec3(&g_game.content.world_shader, "u_light_dir", light_dir);
+
+    f32 light_intensity = 0.0f;
+
+    if (time_of_day >= 6.0f && time_of_day <= 18.0f) {
+        light_intensity = sinf(light_angle);
+    } else {
+        light_intensity = 0.0f;
+    }
+
+    glm_mat4_identity(g_game.instances.sun_instance.transform);
+
+    // set sun position
+    vec3 sun_pos = { 0.0f, 0.0f, 0.0f };
+    glm_vec3_copy(light_dir, sun_pos);
+    glm_vec3_scale(sun_pos, 100.0f, sun_pos);
+    glm_vec3_add(g_player.position, sun_pos, sun_pos);
+    glm_translate(g_game.instances.sun_instance.transform, sun_pos);
+
+    // set sun rotation
+    // use a quaternion to rotate the sun so that it's positive Z axis is
+    // pointing in the direction of the light
+    vec3 sun_rot_axis = { 0.0f, 0.0f, 1.0f };
+    glm_vec3_crossn(light_dir, sun_rot_axis, sun_rot_axis);
+    f32 sun_rot_angle = acosf(glm_vec3_dot(light_dir, sun_rot_axis));
+    versor sun_rot_quat;
+    glm_quatv(sun_rot_quat, sun_rot_angle, sun_rot_axis);
+    glm_quat_rotate(
+        g_game.instances.sun_instance.transform,
+        sun_rot_quat,
+        g_game.instances.sun_instance.transform
     );
 
-    shader_set_vec4(
-        &g_game.content.world_shader,
-        "u_fog_color",
-        (vec4){ 0.5f, 0.8f, 1.0f, 1.0f }
+    // set sun scale
+    glm_scale(
+        g_game.instances.sun_instance.transform,
+        (vec3){ 50.0f + light_intensity * 50.0f,
+                50.0f + light_intensity * 50.0f,
+                50.0f + light_intensity * 50.0f }
     );
 
-    shader_set_vec4(&g_game.content.world_shader, "u_color", (vec4){ 1.0f, 1.0f, 1.0f, 1.0f });
+    // Set sky color
+    const vec3 daytime_sky_color = { 0.5f, 0.8f, 1.0f };
+    const vec3 nighttime_sky_color = { 0.0f, 0.0f, 0.1f };
 
-    shader_set_float(&g_game.content.world_shader, "u_fog_start", 0.0f);
-    shader_set_float(&g_game.content.world_shader, "u_fog_end", 200.0f);
-    shader_set_float(&g_game.content.world_shader, "u_fog_density", 0.0001f);
+    if (time_of_day >= 9.0f && time_of_day < 15.0f) {
+        glm_vec3_copy((f32*)daytime_sky_color, g_game.sky_color);
+    } else if (time_of_day >= 15.0f && time_of_day < 18.0f) {
+        f32 t = (time_of_day - 15.0f) / 3.0f;
+        glm_vec3_lerp((f32*)daytime_sky_color, (f32*)nighttime_sky_color, t, g_game.sky_color);
+    } else if (time_of_day >= 18.0f || time_of_day < 6.0f) {
+        glm_vec3_copy((f32*)nighttime_sky_color, g_game.sky_color);
+    } else if (time_of_day >= 6.0f && time_of_day < 9.0f) {
+        f32 t = (time_of_day - 6.0f) / 3.0f;
+        glm_vec3_lerp((f32*)nighttime_sky_color, (f32*)daytime_sky_color, t, g_game.sky_color);
+    }
+
+    player_set_uniforms(&g_player, current_shader);
+
+    if (!g_debug_tools.no_lighting) {
+        shader_set_float(&g_game.content.world_shader, "u_light_intensity", light_intensity);
+
+        shader_set_vec4(
+            &g_game.content.world_shader,
+            "u_ambient_color",
+            (vec4){ 0.3f, 0.3f, 0.3f, 1.0f }
+        );
+
+        shader_set_vec4(
+            &g_game.content.world_shader,
+            "u_fog_color",
+            (vec4){ g_game.sky_color[0], g_game.sky_color[1], g_game.sky_color[2], 1.0f }
+        );
+
+        shader_set_vec4(
+            &g_game.content.world_shader,
+            "u_color",
+            (vec4){ 1.0f, 1.0f, 1.0f, 1.0f }
+        );
+
+        shader_set_float(&g_game.content.world_shader, "u_fog_start", 0.0f);
+        shader_set_float(&g_game.content.world_shader, "u_fog_end", 200.0f);
+        shader_set_float(&g_game.content.world_shader, "u_fog_density", 0.0001f);
+    }
 
     if (g_debug_tools.no_textures) {
         texture_bind(&g_magic_pixel, 0);
@@ -338,6 +469,13 @@ void game_draw(void) {
     }
 
     world_draw(g_game.world);
+
+    shader_use(&g_game.content.unlit_shader);
+    player_set_uniforms(&g_player, &g_game.content.unlit_shader);
+
+    texture_bind(&g_game.content.sun, 0);
+
+    mesh_instance_draw(&g_game.instances.sun_instance);
 
     shader_use(&g_game.content.gizmo_shader);
     player_set_uniforms(&g_player, &g_game.content.gizmo_shader);
@@ -366,6 +504,8 @@ void game_free(void) {
     shader_free(&g_game.content.world_shader);
     shader_free(&g_game.content.ui_shader);
     // shader_free(&g_game.content.sprite_shader);
+    shader_free(&g_game.content.gizmo_shader);
+    shader_free(&g_game.content.unlit_shader);
 
     texture_free(&g_game.content.atlas);
     texture_free(&g_magic_pixel);

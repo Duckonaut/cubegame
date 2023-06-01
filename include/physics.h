@@ -21,5 +21,6 @@ bool ray_intersect_block(
     float range,
     block_flags_t flags,
     ivec3* block_pos,
-    vec3* normal
+    vec3* normal,
+    float* distance
 );

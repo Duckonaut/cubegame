@@ -16,6 +16,7 @@ uniform float u_fog_end;
 uniform float u_fog_density;
 
 uniform vec3 u_light_dir;
+uniform float u_light_intensity;
 uniform vec4 u_ambient_color;
 
 float fog_factor(float dist) {
@@ -29,7 +30,7 @@ void main() {
     float fogFactor = fog_factor(dist);
 
     // calulate normal-based lighting
-    float diffuse = max(dot(m_normal, u_light_dir), 0.0);
+    float diffuse = max(dot(m_normal, u_light_dir), 0.0) * u_light_intensity;
     vec4 diffuseColor = vec4(vec3(diffuse), 1.0);
 
     // calculate final color

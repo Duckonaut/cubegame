@@ -40,6 +40,9 @@ typedef struct debug_tools {
     bool no_textures;
     bool thin_lines;
     bool no_cull;
+    bool no_chunk_load;
+    bool no_lighting;
+    bool force_day;
 } debug_tools_t;
 
 extern debug_tools_t g_debug_tools;

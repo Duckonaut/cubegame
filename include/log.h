@@ -15,4 +15,9 @@
 #define LOG_ERROR(...) fprintf(stderr, __LOG_ERROR __LOG_ERROR_STR __LOG_NC ": " __VA_ARGS__)
 #define LOG_WARNING(...) fprintf(stderr, __LOG_WARNING __LOG_WARNING_STR __LOG_NC ": " __VA_ARGS__)
 #define LOG_INFO(...) fprintf(stderr, __LOG_INFO __LOG_INFO_STR __LOG_NC ": " __VA_ARGS__)
+
+#ifdef RELESE
+#define LOG_DEBUG(...)
+#else
 #define LOG_DEBUG(...) fprintf(stderr, __LOG_DEBUG __LOG_DEBUG_STR __LOG_NC ": " __VA_ARGS__)
+#endif

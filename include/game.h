@@ -13,9 +13,12 @@ typedef struct content {
     texture_t cursor;
     texture_t atlas;
     texture_t font;
+    texture_t ui_atlas;
+    texture_t sun;
 
     shader_t sprite_shader;
     shader_t world_shader;
+    shader_t unlit_shader;
     shader_t gizmo_shader;
     shader_t ui_shader;
 
@@ -27,6 +30,7 @@ typedef struct content {
 typedef struct instances {
     mesh_instance_t plain_axes_instance;
     mesh_instance_t cube_skeleton_instance;
+    mesh_instance_t sun_instance;
 } instances_t;
 
 typedef struct game_state {
@@ -34,6 +38,8 @@ typedef struct game_state {
     instances_t instances;
     ui_t ui;
     world_t* world; // big, stored on heap
+    f32 time;
+    vec3 sky_color;
 } game_state_t;
 
 extern game_state_t g_game;
@@ -42,7 +48,7 @@ int game_load_content(void);
 
 int game_init(void);
 
-void game_update(void);
+void game_update(f32 delta_time);
 
 void game_draw(void);
 

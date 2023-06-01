@@ -19,6 +19,7 @@
 #include "shader.h"
 #include "mesh.h"
 #include "assets.h"
+#include "ui.h"
 #include "world.h"
 #include "asset_data.h"
 
@@ -31,6 +32,8 @@ static void glfw_window_size_callback(GLFWwindow* window, int width, int height)
 
     g_window_size[0] = width;
     g_window_size[1] = height;
+
+    ui_update(&g_game.ui);
 
     LOG_INFO("Window resized to %dx%d\n", width, height);
 }
@@ -193,7 +196,7 @@ int main(void) {
     while (!glfwWindowShouldClose(window)) {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glClearColor(0.4f, 0.8f, 1.0f, 1.0f);
+        glClearColor(g_game.sky_color[0], g_game.sky_color[1], g_game.sky_color[2], 1.0f);
         glEnable(GL_DEPTH_TEST);
 
         game_draw();
@@ -228,7 +231,7 @@ int main(void) {
 
         rolling_avg_delta_time = rolling_avg_delta_time * 0.9f + g_gametime.delta_time * 0.1f;
 
-        game_update();
+        game_update(g_gametime.delta_time);
 
         for (u32 i = 0; i < 3; i++) {
             g_mouse.buttons[i] = false;

@@ -89,7 +89,7 @@ void chunk_set_block(chunk_t* chunk, world_t* world, ivec3 position, block_id_t 
 block_t* chunk_get_block(chunk_t* chunk, ivec3 position) {
     if (position[0] < 0 || position[0] >= CHUNK_SIZE || position[1] < 0 ||
         position[1] >= CHUNK_SIZE || position[2] < 0 || position[2] >= CHUNK_SIZE) {
-        LOG_DEBUG("Invalid block position: %d, %d, %d", position[0], position[1], position[2]);
+        LOG_ERROR("Invalid block position: %d, %d, %d", position[0], position[1], position[2]);
         assert(false);
     }
 

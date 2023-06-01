@@ -3,6 +3,7 @@
 #include "assets.h"
 #include "game.h"
 #include "globals.h"
+#include "log.h"
 #include "mesh.h"
 #include "types.h"
 #include <cglm/affine.h>
@@ -290,7 +291,7 @@ void ui_element_remove_all_children(ui_element_t* parent) {
     parent->children_count = 0;
 }
 
-void ui_element_free(ui_element_t *element) {
+void ui_element_free(ui_element_t* element) {
     for (size_t i = 0; i < element->children_count; ++i) {
         ui_element_free(&element->children[i]);
     }

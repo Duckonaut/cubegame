@@ -2,6 +2,7 @@
 
 #include "assets.h"
 #include "mesh.h"
+#include <cglm/types.h>
 
 typedef enum ui_element_type {
     UI_ELEMENT_TYPE_BOX,
@@ -59,6 +60,7 @@ typedef struct ui_element {
 
 typedef struct ui {
     ui_element_t root;
+    mat4 projection;
 } ui_t;
 
 void ui_init(ui_t* ui);

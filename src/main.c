@@ -35,6 +35,16 @@ static void glfw_window_size_callback(GLFWwindow* window, int width, int height)
 
     ui_update(&g_game.ui);
 
+    glm_ortho(
+        0.0f,
+        (float)g_window_size[0],
+        0.0f,
+        (float)g_window_size[1],
+        -1.0f,
+        1.0f,
+        g_game.ui.projection
+    );
+
     LOG_INFO("Window resized to %dx%d\n", width, height);
 }
 
@@ -162,7 +172,6 @@ int main(void) {
 
     LOG_INFO("Game initialized\n");
 
-    mat4 ui_projection;
     glm_ortho(
         0.0f,
         (float)g_window_size[0],
@@ -170,7 +179,7 @@ int main(void) {
         (float)g_window_size[1],
         -1.0f,
         1.0f,
-        ui_projection
+        g_game.ui.projection
     );
 
     mat4 ui_view = GLM_MAT4_IDENTITY_INIT;
@@ -209,7 +218,7 @@ int main(void) {
         shader_use(&g_game.content.ui_shader);
 
         shader_set_mat4(&g_game.content.ui_shader, "u_view", ui_view);
-        shader_set_mat4(&g_game.content.ui_shader, "u_projection", ui_projection);
+        shader_set_mat4(&g_game.content.ui_shader, "u_projection", g_game.ui.projection);
 
         game_draw_ui();
 

@@ -61,6 +61,7 @@ typedef struct ui_element {
 typedef struct ui {
     ui_element_t root;
     mat4 projection;
+    mat4 view;
 } ui_t;
 
 void ui_init(ui_t* ui);

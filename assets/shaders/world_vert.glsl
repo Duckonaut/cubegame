@@ -8,9 +8,12 @@ uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
 
+uniform mat4 u_light_view_projection;
+
 out vec3 m_normal;
 out vec2 m_uv;
 out vec3 m_world_pos;
+out vec4 m_light_space_pos;
 
 void main()
 {
@@ -19,4 +22,5 @@ void main()
     m_world_pos = (u_model * vec4(a_pos, 1.0f)).xyz;
     m_normal = mat3(transpose(inverse(u_model))) * a_normal;
     m_uv = a_uv;
+    m_light_space_pos = u_light_view_projection * u_model * vec4(a_pos, 1.0f);
 }

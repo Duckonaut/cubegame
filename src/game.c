@@ -4,6 +4,7 @@
 #include "camera.h"
 #include "glm_extra.h"
 #include "globals.h"
+#include "lighting.h"
 #include "log.h"
 #include "mesh.h"
 #include "physics.h"
@@ -11,12 +12,14 @@
 #include "shader.h"
 #include "ui.h"
 #include "world.h"
+
 #include <cglm/affine-pre.h>
 #include <cglm/cam.h>
 #include <cglm/quat.h>
 #include <cglm/types.h>
 #include <cglm/vec3.h>
 #include <cglm/mat4.h>
+#include <stb_image_write.h>
 
 // Disable clang-format for this block
 // clang-format off
@@ -214,6 +217,9 @@ int game_load_content(void) {
     g_game.content.gizmo_shader =
         shader_new(a_asset_data.shaders.world_vert, a_asset_data.shaders.gizmo_frag);
 
+    g_game.content.shadow_shader =
+        shader_new(a_asset_data.shaders.shadow_vert, a_asset_data.shaders.shadow_frag);
+
     LOG_INFO("Shader initialized\n");
 
     return 0;
@@ -231,6 +237,14 @@ int game_init(void) {
     g_game.instances.sun_instance = mesh_instance_new(&g_game.content.quad);
 
     LOG_INFO("Mesh instances initialized\n");
+
+    light_sun_init(
+        &g_game.instances.sun,
+        (vec3){ 0.0f, 0.0f, 0.0f },
+        (vec3){ 1.0f, -1.0f, 0.0f },
+        (vec3){ 80.0f, 80.0f, 80.0f },
+        1.0f
+    );
 
     ui_init(&g_game.ui);
 
@@ -348,7 +362,12 @@ void game_update(f32 delta_time) {
 }
 
 void game_draw(void) {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(g_game.sky_color[0], g_game.sky_color[1], g_game.sky_color[2], 1.0f);
+
     shader_t* current_shader = NULL;
+
+    light_sun_shadow_update(&g_game.instances.sun);
 
     if (g_debug_tools.no_lighting) {
         shader_use(&g_game.content.unlit_shader);
@@ -363,7 +382,7 @@ void game_draw(void) {
         fmodf(g_game.time / 1.0f, 24.0f); // 10 secons per "hour", 24 hours per day
 
     if (g_debug_tools.force_day) {
-        time_of_day = 12.0f;
+        time_of_day = 9.0f;
     }
 
     // 0.0f is midnight, 12.0f is noon, 24.0f is midnight
@@ -462,11 +481,18 @@ void game_draw(void) {
         shader_set_float(&g_game.content.world_shader, "u_fog_density", 0.0001f);
     }
 
+    shader_set_uint(&g_game.content.world_shader, "u_texture", 0);
+
     if (g_debug_tools.no_textures) {
         texture_bind(&g_magic_pixel, 0);
     } else {
         texture_bind(&g_game.content.atlas, 0);
     }
+
+    glm_vec3_negate(light_dir);
+    glm_vec3_copy(light_dir, g_game.instances.sun.direction);
+    glm_vec3_copy(sun_pos, g_game.instances.sun.position);
+    light_sun_shadow_set_uniforms(&g_game.instances.sun, current_shader);
 
     world_draw(g_game.world);
 
@@ -494,6 +520,9 @@ void game_draw(void) {
 void game_draw_debug(void) {}
 
 void game_draw_ui(void) {
+    shader_set_mat4(&g_game.content.ui_shader, "u_view", g_game.ui.view);
+    shader_set_mat4(&g_game.content.ui_shader, "u_projection", g_game.ui.projection);
+
     ui_draw(&g_game.ui);
 }
 
@@ -501,8 +530,11 @@ void game_free(void) {
     mesh_free(&g_game.content.cube_skeleton);
     mesh_free(&g_game.content.plain_axes);
 
+    light_sun_free(&g_game.instances.sun);
+
     shader_free(&g_game.content.world_shader);
     shader_free(&g_game.content.ui_shader);
+    shader_free(&g_game.content.shadow_shader);
     // shader_free(&g_game.content.sprite_shader);
     shader_free(&g_game.content.gizmo_shader);
     shader_free(&g_game.content.unlit_shader);

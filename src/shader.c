@@ -110,6 +110,9 @@ void shader_use(shader_t* shader) {
 void shader_set_int(shader_t* shader, const char* name, i32 value) {
     glUniform1i(glGetUniformLocation(shader->program, name), value);
 }
+void shader_set_uint(shader_t* shader, const char* name, u32 value) {
+    glUniform1ui(glGetUniformLocation(shader->program, name), value);
+}
 void shader_set_float(shader_t* shader, const char* name, f32 value) {
     glUniform1f(glGetUniformLocation(shader->program, name), value);
 }

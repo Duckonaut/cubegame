@@ -15,6 +15,7 @@ void shader_free(shader_t* shader);
 void shader_use(shader_t* shader);
 
 void shader_set_int(shader_t* shader, const char* name, int value);
+void shader_set_uint(shader_t* shader, const char* name, u32 value);
 void shader_set_float(shader_t* shader, const char* name, float value);
 void shader_set_vec2(shader_t* shader, const char* name, vec2 value);
 void shader_set_vec3(shader_t* shader, const char* name, vec3 value);

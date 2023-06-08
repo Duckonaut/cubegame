@@ -16,6 +16,7 @@
 #include <cglm/types.h>
 #include <cglm/vec3.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -59,14 +60,25 @@ void chunk_generate(chunk_t* chunk) {
             f32 realz = (f32)(z + chunk->position[2] * CHUNK_SIZE);
 
             i32 height = 10 + (int)(perlin2d(realx * 0.05f, realz * 0.05f) * 10.0f) +
-                (int)(perlin2d(realx * 0.01f, realz * 0.01f) * 30.0f);
+                         (int)(perlin2d(realx * 0.01f, realz * 0.01f) * 30.0f);
 
             i32 rock_height = height - 5;
 
             for (i32 y = 0; y < CHUNK_SIZE; y++) {
                 i32 index = CHUNK_POS_TO_INDEX(x, y, z);
                 i32 world_y = y + chunk->position[1] * CHUNK_SIZE;
-                if (world_y == height) {
+
+                float cave_noise = perlin3d(realx * 0.1f, (f32)world_y * 0.1f, realz * 0.1f);
+
+                float cave_factor = 0.4f;
+
+                if (world_y > height - 10) {
+                    cave_factor = 0.4f + ((float)world_y - ((float)height - 10)) * 0.06f;
+                }
+
+                if (cave_noise > cave_factor) {
+                    chunk->blocks[index].id = BLOCK_AIR;
+                } else if (world_y == height) {
                     chunk->blocks[index].id = 3;
                 } else if (world_y < rock_height) {
                     chunk->blocks[index].id = 1;

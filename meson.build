@@ -45,6 +45,8 @@ assets = [
   'assets/shaders/ui_vert.glsl',
   'assets/shaders/world_frag.glsl',
   'assets/shaders/world_vert.glsl',
+  'assets/shaders/shadow_frag.glsl',
+  'assets/shaders/shadow_vert.glsl',
   'assets/shaders/unlit_frag.glsl',
   'assets/textures/atlas.png',
   'assets/textures/cursor.png',
@@ -72,6 +74,7 @@ src = [
   'src/ui.c',
   'src/game.c',
   'src/utils.c',
+  'src/lighting.c',
   asset_data
 ]
 

@@ -99,7 +99,7 @@ void light_sun_free(light_sun_t* light_sun) {
 
 void light_sun_shadow_update(light_sun_t* light_sun) {
     mat4 light_projection;
-    glm_ortho(-256.0f, 256.0f, -256.0f, 256.0f, 0.1f, 200.0f, light_projection);
+    glm_ortho(-100.0f, 100.0f, -100.0f, 100.0f, 0.1f, 200.0f, light_projection);
 
     mat4 light_view;
     glm_look(

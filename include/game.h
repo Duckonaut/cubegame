@@ -1,6 +1,7 @@
 #pragma once
 
 #include "assets.h"
+#include "lighting.h"
 #include "mesh.h"
 #include "shader.h"
 #include "types.h"
@@ -21,6 +22,7 @@ typedef struct content {
     shader_t unlit_shader;
     shader_t gizmo_shader;
     shader_t ui_shader;
+    shader_t shadow_shader;
 
     mesh_t quad;
     mesh_t plain_axes;
@@ -31,6 +33,8 @@ typedef struct instances {
     mesh_instance_t plain_axes_instance;
     mesh_instance_t cube_skeleton_instance;
     mesh_instance_t sun_instance;
+
+    light_sun_t sun;
 } instances_t;
 
 typedef struct game_state {
@@ -40,6 +44,7 @@ typedef struct game_state {
     world_t* world; // big, stored on heap
     f32 time;
     vec3 sky_color;
+    GLuint depth_map_fbo;
 } game_state_t;
 
 extern game_state_t g_game;

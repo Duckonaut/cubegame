@@ -312,10 +312,10 @@ static void player_look(player_t* player) {
     player->view_direction[0] += g_mouse.delta[1] * 0.2f * g_gametime.delta_time;
     player->view_direction[1] += g_mouse.delta[0] * 0.2f * g_gametime.delta_time;
 
-    if (player->view_direction[0] > GLM_PI_2f - 0.1f) {
-        player->view_direction[0] = GLM_PI_2f - 0.1f;
-    } else if (player->view_direction[0] < -GLM_PI_2f + 0.1f) {
-        player->view_direction[0] = -GLM_PI_2f + 0.1f;
+    if (player->view_direction[0] > GLM_PI_2f - 0.05f) {
+        player->view_direction[0] = GLM_PI_2f - 0.05f;
+    } else if (player->view_direction[0] < -GLM_PI_2f + 0.05f) {
+        player->view_direction[0] = -GLM_PI_2f + 0.05f;
     }
 
     player->rotation[0] = player->view_direction[0];
@@ -351,8 +351,8 @@ void player_update(player_t* player) {
         glm_ivec3_copy(player->current_chunk, player->old_chunk);
 
         ivec3 chunk_pos;
-        for (int x = -1; x <= 1; x++) {
-            for (int z = -1; z <= 1; z++) {
+        for (int x = -2; x <= 2; x++) {
+            for (int z = -2; z <= 2; z++) {
                 int min_y = player->current_chunk[1] - 2;
                 if (min_y > 0) {
                     min_y = 0;

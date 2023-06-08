@@ -77,7 +77,7 @@ typedef struct chunk {
     block_t blocks[CHUNK_BLOCK_COUNT];
 } chunk_t;
 
-#define MAX_LOADED_CHUNKS 512 // 8 in X, 4 in Y, 8 in Z
+#define MAX_LOADED_CHUNKS 1024
 
 typedef struct world {
     chunk_t* chunks;

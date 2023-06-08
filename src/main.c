@@ -6,7 +6,9 @@
 #include <cglm/types.h>
 #include <cglm/vec3.h>
 
+#include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include "camera.h"
@@ -22,6 +24,8 @@
 #include "ui.h"
 #include "world.h"
 #include "asset_data.h"
+
+#define FRAMETIME_SAMPLES 2000
 
 static void glfw_error_callback(int error, const char* description) {
     LOG_ERROR("GLFW Error %d: %s", error, description);
@@ -113,12 +117,23 @@ static void glfw_cursor_position_callback(GLFWwindow* window, double xpos, doubl
     g_mouse.position[1] = (float)ypos;
 }
 
+// float comparer for qsort for ordering from highest to lowest
+static int float_compare(const void* a, const void* b) {
+    float fa = *(const float*)a;
+    float fb = *(const float*)b;
+
+    return (fa < fb) - (fa > fb);
+}
+
 int main(void) {
     GLFWwindow* window;
 
     /* Initialize the library */
     if (!glfwInit())
         return -1;
+
+    // let's tear this fucker
+    // glfwWindowHint(GLFW_DOUBLEBUFFER, false);
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(960, 640, "dev: cubegame", NULL, NULL);
@@ -182,7 +197,7 @@ int main(void) {
         g_game.ui.projection
     );
 
-    mat4 ui_view = GLM_MAT4_IDENTITY_INIT;
+    glm_mat4_identity(g_game.ui.view);
 
     LOG_INFO("UI projection and view matrices initialized\n");
 
@@ -194,11 +209,15 @@ int main(void) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    LOG_INFO("OpenGL state set\n");
+
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     LOG_INFO("Entering main loop\n");
 
-    float rolling_avg_delta_time = 0.0f;
+    float frametimes[FRAMETIME_SAMPLES];
+    usize frametime_index = 0;
+    usize frametime_count = 0;
 
     double last_time = glfwGetTime();
 
@@ -217,13 +236,12 @@ int main(void) {
 
         shader_use(&g_game.content.ui_shader);
 
-        shader_set_mat4(&g_game.content.ui_shader, "u_view", ui_view);
-        shader_set_mat4(&g_game.content.ui_shader, "u_projection", g_game.ui.projection);
-
         game_draw_ui();
 
-        /* Swap front and back buffers */
+        // for double buffering
         glfwSwapBuffers(window);
+        // for single buffering
+        // glFinish();
 
         g_mouse.last_position[0] = g_mouse.position[0];
         g_mouse.last_position[1] = g_mouse.position[1];
@@ -238,7 +256,10 @@ int main(void) {
         g_gametime.delta_time = (float)(current_time - last_time);
         last_time = current_time;
 
-        rolling_avg_delta_time = rolling_avg_delta_time * 0.9f + g_gametime.delta_time * 0.1f;
+        frametimes[frametime_index] = g_gametime.delta_time;
+        frametime_index = (frametime_index + 1) % FRAMETIME_SAMPLES;
+        frametime_count =
+            frametime_count < FRAMETIME_SAMPLES ? frametime_count + 1 : frametime_count;
 
         game_update(g_gametime.delta_time);
 
@@ -248,8 +269,49 @@ int main(void) {
     }
 
     LOG_INFO("Exiting main loop\n");
-    LOG_INFO("Average delta time: %f\n", rolling_avg_delta_time);
-    LOG_INFO("Average FPS: %f\n", 1.0f / rolling_avg_delta_time);
+    // calculate average frametime, the 1% low and the 0.1% low
+    float average_frametime = 0.0f;
+    float average_frametime_without_1_percent_low = 0.0f;
+    float one_percent_low = 0.0f;
+    float point_one_percent_low = 0.0f;
+
+    for (usize i = 0; i < frametime_count; i++) {
+        average_frametime += frametimes[i];
+
+        if (i >= (usize)((float)frametime_count * 0.01f)) {
+            average_frametime_without_1_percent_low += frametimes[i];
+        }
+    }
+
+    average_frametime /= (float)frametime_count;
+    average_frametime_without_1_percent_low /=
+        (float)frametime_count - (float)frametime_count * 0.01f;
+
+    float* sorted_frametimes = malloc(sizeof(float) * frametime_count);
+    memcpy(sorted_frametimes, frametimes, sizeof(float) * frametime_count);
+
+    qsort(sorted_frametimes, frametime_count, sizeof(float), float_compare);
+
+    one_percent_low = sorted_frametimes[(usize)((float)frametime_count * 0.01f)];
+    point_one_percent_low = sorted_frametimes[(usize)((float)frametime_count * 0.001f)];
+
+    free(sorted_frametimes);
+
+    LOG_INFO("Average frametime: %f\n", average_frametime);
+    LOG_INFO(
+        "Average frametime without 1%% low: %f\n",
+        average_frametime_without_1_percent_low
+    );
+    LOG_INFO("1%% low: %f\n", one_percent_low);
+    LOG_INFO("0.1%% low: %f\n", point_one_percent_low);
+
+    LOG_INFO("Average FPS: %f\n", 1.0f / average_frametime);
+    LOG_INFO(
+        "Average FPS without 1%% low: %f\n",
+        1.0f / average_frametime_without_1_percent_low
+    );
+    LOG_INFO("1%% low FPS: %f\n", 1.0f / one_percent_low);
+    LOG_INFO("0.1%% low FPS: %f\n", 1.0f / point_one_percent_low);
 
     usize total_chunks = 0;
     usize total_blocks = 0;

@@ -113,9 +113,13 @@ f32 perlin2d(f32 x, f32 y) {
 }
 
 f32 perlin3d(f32 x, f32 y, f32 z) {
-    i32 xi = (i32)x & 255;
-    i32 yi = (i32)y & 255;
-    i32 zi = (i32)z & 255;
+    if (x < 0) x = -x;
+    if (y < 0) y = -y;
+    if (z < 0) z = -z;
+
+    i32 xi = posmod((i32)x, 256);
+    i32 yi = posmod((i32)y, 256);
+    i32 zi = posmod((i32)z, 256);
 
     f32 xf = x - floorf(x);
     f32 yf = y - floorf(y);
@@ -125,14 +129,14 @@ f32 perlin3d(f32 x, f32 y, f32 z) {
     f32 v = fade(yf);
     f32 w = fade(zf);
 
-    i32 aaa = g_perm[g_perm[g_perm[xi] + yi] + zi];
-    i32 aba = g_perm[g_perm[g_perm[xi] + yi + 1] + zi];
-    i32 aab = g_perm[g_perm[g_perm[xi] + yi] + zi + 1];
-    i32 abb = g_perm[g_perm[g_perm[xi] + yi + 1] + zi + 1];
-    i32 baa = g_perm[g_perm[g_perm[xi + 1] + yi] + zi];
-    i32 bba = g_perm[g_perm[g_perm[xi + 1] + yi + 1] + zi];
-    i32 bab = g_perm[g_perm[g_perm[xi + 1] + yi] + zi + 1];
-    i32 bbb = g_perm[g_perm[g_perm[xi + 1] + yi + 1] + zi + 1];
+    i32 aaa = g_perm[(g_perm[(g_perm[xi] + yi) % 256] + zi) % 256];
+    i32 aba = g_perm[(g_perm[(g_perm[xi] + yi + 1) % 256] + zi) % 256];
+    i32 aab = g_perm[(g_perm[(g_perm[xi] + yi) % 256] + zi + 1) % 256];
+    i32 abb = g_perm[(g_perm[(g_perm[xi] + yi + 1) % 256] + zi + 1) % 256];
+    i32 baa = g_perm[(g_perm[(g_perm[xi + 1] + yi) % 256] + zi) % 256];
+    i32 bba = g_perm[(g_perm[(g_perm[xi + 1] + yi + 1) % 256] + zi) % 256];
+    i32 bab = g_perm[(g_perm[(g_perm[xi + 1] + yi) % 256] + zi + 1) % 256];
+    i32 bbb = g_perm[(g_perm[(g_perm[xi + 1] + yi + 1) % 256] + zi + 1) % 256];
 
     f32 x1 = glm_lerp(grad3d(g_perm[aaa], xf, yf, zf), grad3d(g_perm[baa], xf - 1, yf, zf), u);
     f32 x2 = glm_lerp(

@@ -16,6 +16,7 @@
 #include <cglm/types.h>
 #include <cglm/vec3.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -59,14 +60,25 @@ void chunk_generate(chunk_t* chunk) {
             f32 realz = (f32)(z + chunk->position[2] * CHUNK_SIZE);
 
             i32 height = 10 + (int)(perlin2d(realx * 0.05f, realz * 0.05f) * 10.0f) +
-                (int)(perlin2d(realx * 0.01f, realz * 0.01f) * 30.0f);
+                         (int)(perlin2d(realx * 0.01f, realz * 0.01f) * 30.0f);
 
             i32 rock_height = height - 5;
 
             for (i32 y = 0; y < CHUNK_SIZE; y++) {
                 i32 index = CHUNK_POS_TO_INDEX(x, y, z);
                 i32 world_y = y + chunk->position[1] * CHUNK_SIZE;
-                if (world_y == height) {
+
+                float cave_noise = perlin3d(realx * 0.1f, (f32)world_y * 0.1f, realz * 0.1f);
+
+                float cave_factor = 0.4f;
+
+                if (world_y > height - 10) {
+                    cave_factor = 0.4f + ((float)world_y - ((float)height - 10)) * 0.06f;
+                }
+
+                if (cave_noise > cave_factor) {
+                    chunk->blocks[index].id = BLOCK_AIR;
+                } else if (world_y == height) {
                     chunk->blocks[index].id = 3;
                 } else if (world_y < rock_height) {
                     chunk->blocks[index].id = 1;
@@ -487,29 +499,43 @@ void world_free(world_t* world) {
 
 void world_remesh_queue_add(world_t* world, u32 index) {
     world->chunk_slot_remesh_queue[world->chunk_slot_remesh_queue_count++] = index;
+    world_chunk_slot_set_unremeshed(world, index);
 }
 
 void world_remesh_queue_clear(world_t* world) {
     world->chunk_slot_remesh_queue_count = 0;
 }
 
+// remesh one chunk per frame
 void world_remesh_queue_process(world_t* world) {
     if (world->chunk_slot_remesh_queue_count == 0) {
         return;
     }
 
-    world_chunk_slot_clear_remeshed(world);
-    for (u32 i = 0; i < world->chunk_slot_remesh_queue_count; i++) {
-        if (!world_chunk_slot_is_taken(world, world->chunk_slot_remesh_queue[i])) {
+    bool remeshed_something = false;
+
+    while (!remeshed_something) {
+        if (world->chunk_slot_remesh_queue_count == 0) {
+            break;
+        }
+        u32 remesh_index =
+            world->chunk_slot_remesh_queue[world->chunk_slot_remesh_queue_count - 1];
+
+        if (!world_chunk_slot_is_taken(world, remesh_index)) {
+            world->chunk_slot_remesh_queue_count--;
             continue;
         }
-        if (world_chunk_slot_is_remeshed(world, world->chunk_slot_remesh_queue[i])) {
+
+        if (world_chunk_slot_is_remeshed(world, remesh_index)) {
+            world->chunk_slot_remesh_queue_count--;
             continue;
         }
-        chunk_t* chunk = &world->chunks[world->chunk_slot_remesh_queue[i]];
+
+        chunk_t* chunk = &world->chunks[remesh_index];
         chunk_remesh(chunk, world);
+        world_chunk_slot_is_remeshed(world, remesh_index);
+        remeshed_something = true;
     }
-    world_remesh_queue_clear(world);
 }
 
 chunk_t* world_get_chunk(world_t* world, ivec3 position) {

@@ -1,9 +1,14 @@
-pwd := env_var('PWD')
-
+[unix]
 clean:
 	rm -rf ./build
 	rm -rf ./release
 	rm -rf ./dist
+
+[windows]
+clean:
+	rm -Recurse -Force ./build
+	rm -Recurse -Force ./release
+	rm -Recurse -Force ./dist
 
 [unix]
 setup:

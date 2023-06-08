@@ -39,10 +39,10 @@ dist: clean release
 	cp -r ./assets ./dist
 
 [unix]
-run:
+run: build
 	./build/cubegame
 
 [windows]
-run:
+run: build
 	./build/cubegame.exe
 

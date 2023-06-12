@@ -75,6 +75,7 @@ src = [
   'src/game.c',
   'src/utils.c',
   'src/lighting.c',
+  'src/log.c',
   asset_data
 ]
 

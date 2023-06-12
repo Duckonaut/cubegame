@@ -133,7 +133,7 @@ int main(void) {
         return -1;
 
     // let's tear this fucker
-    // glfwWindowHint(GLFW_DOUBLEBUFFER, false);
+    glfwWindowHint(GLFW_DOUBLEBUFFER, false);
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(960, 640, "dev: cubegame", NULL, NULL);
@@ -144,6 +144,10 @@ int main(void) {
         glfwTerminate();
         return -1;
     }
+
+    log_init();
+
+    LOG_INFO("Logging initialized.");
 
     LOG_INFO("statically included asset data size: %zu\n", sizeof(a_asset_data));
 
@@ -239,9 +243,9 @@ int main(void) {
         game_draw_ui();
 
         // for double buffering
-        glfwSwapBuffers(window);
+        // glfwSwapBuffers(window);
         // for single buffering
-        // glFinish();
+        glFinish();
 
         g_mouse.last_position[0] = g_mouse.position[0];
         g_mouse.last_position[1] = g_mouse.position[1];
@@ -347,5 +351,7 @@ int main(void) {
     LOG_INFO("Total triangles: %zu\n", total_tris);
 
     glfwTerminate();
+
+    log_close();
     return 0;
 }

@@ -18,7 +18,7 @@ if cc.get_id() == 'gcc' or cc.get_id() == 'clang'
 endif
 
 if get_option('buildtype') == 'release'
-  add_project_arguments('-DRELESE', language : 'c')
+  add_project_arguments('-DRELEASE', language : 'c')
 endif
 
 glfw_dep = dependency('glfw3', required : true, static : static_link_libs)

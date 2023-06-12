@@ -50,11 +50,12 @@ float shadow_factor(vec4 light_space_pos) {
     shadow_pos = shadow_pos * 0.5 + 0.5;
 
     float bias = 0.0005 * tan(acos(dot(m_normal, u_light_dir)));
+    float noise_offset = 1.0 / 5000.0;
     // use random offset from poisson disk
     float shadow = 0.0;
     for (int i = 0; i < 9; i++) {
-        int index = int(random(m_uv + c_poisson_values[i]) * 13.0);
-        vec3 sample_pos = shadow_pos + vec3(c_poisson_values[index % 9] * bias, 0.0);
+        int index = int(random(m_uv + c_poisson_values[i]) * 500.0);
+        vec3 sample_pos = shadow_pos + vec3(c_poisson_values[index % 9] * noise_offset, 0.0);
         float depth = texture(u_shadow_map, sample_pos);
         if (depth < shadow_pos.z - bias) {
             shadow += 1.0;

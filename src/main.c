@@ -125,15 +125,42 @@ static int float_compare(const void* a, const void* b) {
     return (fa < fb) - (fa > fb);
 }
 
-int main(void) {
+typedef struct args {
+    bool vsync; // -v, --vsync
+} args_t;
+
+static args_t parse_args(int argc, char** argv) {
+    args_t args = {0};
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--vsync") == 0) {
+            args.vsync = true;
+        }
+    }
+
+    return args;
+}
+
+int main(int argc, char** argv) {
+    args_t args = parse_args(argc, argv);
+
     GLFWwindow* window;
 
     /* Initialize the library */
     if (!glfwInit())
         return -1;
 
-    // let's tear this fucker
-    glfwWindowHint(GLFW_DOUBLEBUFFER, false);
+    // if wayland, force vsync
+#ifdef __linux__
+    if (getenv("WAYLAND_DISPLAY") != NULL) {
+        args.vsync = true;
+    }
+#endif
+
+    if (args.vsync) {
+        glfwWindowHint(GLFW_DOUBLEBUFFER, true);
+    } else {
+        glfwWindowHint(GLFW_DOUBLEBUFFER, false);
+    }
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(960, 640, "dev: cubegame", NULL, NULL);
@@ -147,7 +174,7 @@ int main(void) {
 
     log_init();
 
-    LOG_INFO("Logging initialized.");
+    LOG_INFO("Logging initialized\n");
 
     LOG_INFO("statically included asset data size: %zu\n", sizeof(a_asset_data));
 
@@ -242,10 +269,11 @@ int main(void) {
 
         game_draw_ui();
 
-        // for double buffering
-        // glfwSwapBuffers(window);
-        // for single buffering
-        glFinish();
+        if (args.vsync) {
+            glfwSwapBuffers(window);
+        } else {
+            glFinish();
+        }
 
         g_mouse.last_position[0] = g_mouse.position[0];
         g_mouse.last_position[1] = g_mouse.position[1];

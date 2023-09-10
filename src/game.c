@@ -17,6 +17,7 @@
 #include <cglm/cam.h>
 #include <cglm/quat.h>
 #include <cglm/types.h>
+#include <cglm/util.h>
 #include <cglm/vec3.h>
 #include <cglm/mat4.h>
 #include <stb_image_write.h>
@@ -105,10 +106,10 @@ const u32 cube_indices[] = {
 };
 
 const vertex_t magic_plane_vertices[] = {
-    { { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f } },
-    { { 1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f } },
-    { { 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } },
-    { { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } },
+    { { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } },
+    { { 1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } },
+    { { 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f } },
+    { { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f } },
 };
 
 const u32 magic_plane_indices[] = {
@@ -256,6 +257,14 @@ int game_init(void) {
 
     ui_element_add_child(&g_game.ui.root, crosshair);
 
+    ui_element_t inventory_slot = ui_element_create_image(
+        UI_ELEMENT_POSITION_RELATIVE_BC,
+        (rect_t){ 0.0, 0.0, 64.0, 64.0 },
+        g_game.content.ui_atlas
+    );
+
+    ui_element_add_child(&g_game.ui.root, inventory_slot);
+
     ui_update(&g_game.ui);
 
     LOG_INFO("UI initialized\n");
@@ -379,7 +388,7 @@ void game_draw(void) {
 
     // Get light dir based on time of day
     f32 time_of_day =
-        fmodf(g_game.time / 1.0f, 24.0f); // 10 secons per "hour", 24 hours per day
+        fmodf(g_game.time / 1.0f, 24.0f); // 10 seconds per "hour", 24 hours per day
 
     if (g_debug_tools.force_day) {
         time_of_day = 9.0f;
@@ -457,11 +466,12 @@ void game_draw(void) {
 
     if (!g_debug_tools.no_lighting) {
         shader_set_float(&g_game.content.world_shader, "u_light_intensity", light_intensity);
+        float ambient_intensity = glm_lerp(0.4f, 0.2f, light_intensity);
 
         shader_set_vec4(
             &g_game.content.world_shader,
             "u_ambient_color",
-            (vec4){ 0.3f, 0.3f, 0.3f, 1.0f }
+            (vec4){ ambient_intensity, ambient_intensity, ambient_intensity, 1.0f }
         );
 
         shader_set_vec4(

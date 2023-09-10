@@ -81,7 +81,7 @@ void main() {
     vec4 finalColor = (diffuseColor + u_ambient_color) * texColor;
 
     // apply shadow
-    finalColor.rgb *= 1.0 - shadow * 0.8;
+    finalColor.rgb *= 1.0 - shadow * (1.0 - u_ambient_color.rgb);
 
     // apply fog
     o_fragColor = mix(finalColor, u_fog_color, fogFactor);

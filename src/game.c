@@ -327,13 +327,6 @@ void game_update(f32 delta_time) {
                     (float)g_player.selected_block[1] + 0.5f,
                     (float)g_player.selected_block[2] + 0.5f }
         );
-
-        LOG_DEBUG(
-            "Selected block: %d %d %d\n",
-            g_player.selected_block[0],
-            g_player.selected_block[1],
-            g_player.selected_block[2]
-        );
     }
 
     if (g_mouse.buttons_down[0]) {

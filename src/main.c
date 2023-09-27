@@ -73,6 +73,12 @@ static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int act
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        // enable imgui mouse capture
+        ImGuiIO* io = igGetIO();
+        io->MouseDrawCursor = true;
+        io->ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+        io->ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
+
         g_mouse.captured = false;
     }
 
@@ -111,7 +117,16 @@ static void glfw_mouse_button_callback(GLFWwindow* window, int button, int actio
     }
 
     if (button_index == 0 && action == GLFW_PRESS) {
+        // check if the mouse is captured by imgui
+        ImGuiIO* io = igGetIO();
+        if (io->WantCaptureMouse) {
+            return;
+        }
+
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        // disable imgui mouse capture
+        io->ConfigFlags |= ImGuiConfigFlags_NoMouse;
+
         g_mouse.captured = true;
     }
 }
@@ -210,6 +225,18 @@ int main(int argc, char** argv) {
 
     LOG_INFO("OpenGL Version: %s\n", glGetString(GL_VERSION));
 
+    LOG_INFO("Setting up ImGui\n");
+
+    igCreateContext(NULL);
+    ImGuiIO* io = igGetIO();
+    io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io->ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330 core");
+
+    igStyleColorsDark(NULL);
+
     if (game_load_content() != 0) {
         LOG_ERROR("Failed to load game content\n");
         return -1;
@@ -250,20 +277,10 @@ int main(int argc, char** argv) {
 
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    LOG_INFO("Setting up ImGui\n");
-
-    igCreateContext(NULL);
-    ImGuiIO* io = igGetIO();
-    io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 330 core");
-
-    igStyleColorsDark(NULL);
-
     LOG_INFO("Entering main loop\n");
 
     float frametimes[FRAMETIME_SAMPLES];
+    memset(frametimes, 0, sizeof(float) * FRAMETIME_SAMPLES);
     usize frametime_index = 0;
     usize frametime_count = 0;
 
@@ -290,7 +307,36 @@ int main(int argc, char** argv) {
         ImGui_ImplGlfw_NewFrame();
         igNewFrame();
 
-        igShowDemoWindow(NULL);
+        {
+            if (g_mouse.captured) {
+                igSetMouseCursor(ImGuiMouseCursor_None);
+            }
+            igBegin("Debug", NULL, 0);
+
+            igText(
+                "Selected block: %d %d %d\n",
+                g_player.selected_block[0],
+                g_player.selected_block[1],
+                g_player.selected_block[2]
+            );
+            igText("FPS: %f", 1.0f / g_gametime.delta_time);
+
+            igText("Frametimes:");
+            // plot frametimes
+            igPlotLines_FloatPtr(
+                "",
+                frametimes,
+                FRAMETIME_SAMPLES,
+                0, // just loop around
+                NULL,
+                0.0f,
+                0.1f,
+                (ImVec2){ 0, 120 },
+                sizeof(float)
+            );
+
+            igEnd();
+        }
 
         igRender();
         ImGui_ImplOpenGL3_RenderDrawData(igGetDrawData());
@@ -403,6 +449,10 @@ int main(int argc, char** argv) {
     LOG_INFO("Total blocks: %zu\n", total_blocks);
     LOG_INFO("Total vertices: %zu\n", total_vertices);
     LOG_INFO("Total triangles: %zu\n", total_tris);
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    igDestroyContext(NULL);
 
     glfwTerminate();
 

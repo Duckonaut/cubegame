@@ -119,7 +119,8 @@ void ui_element_update(ui_element_t* element) {
             case UI_ELEMENT_POSITION_RELATIVE_TL:
                 element->_real_pos = (rect_t){
                     parent->_real_pos.x + element->pos.x,
-                    parent->_real_pos.y + element->pos.y,
+                    parent->_real_pos.y + parent->_real_pos.height - element->pos.height -
+                        element->pos.y,
                     element->pos.width,
                     element->pos.height,
                 };
@@ -128,7 +129,8 @@ void ui_element_update(ui_element_t* element) {
                 element->_real_pos = (rect_t){
                     parent->_real_pos.x + parent->_real_pos.width - element->pos.width -
                         element->pos.x,
-                    parent->_real_pos.y + element->pos.y,
+                    parent->_real_pos.y + parent->_real_pos.height - element->pos.height -
+                        element->pos.y,
                     element->pos.width,
                     element->pos.height,
                 };
@@ -136,8 +138,7 @@ void ui_element_update(ui_element_t* element) {
             case UI_ELEMENT_POSITION_RELATIVE_BL:
                 element->_real_pos = (rect_t){
                     parent->_real_pos.x + element->pos.x,
-                    parent->_real_pos.y + parent->_real_pos.height - element->pos.height -
-                        element->pos.y,
+                    parent->_real_pos.y + element->pos.y,
                     element->pos.width,
                     element->pos.height,
                 };
@@ -146,8 +147,7 @@ void ui_element_update(ui_element_t* element) {
                 element->_real_pos = (rect_t){
                     parent->_real_pos.x + parent->_real_pos.width - element->pos.width -
                         element->pos.x,
-                    parent->_real_pos.y + parent->_real_pos.height - element->pos.height -
-                        element->pos.y,
+                    parent->_real_pos.y + element->pos.y,
                     element->pos.width,
                     element->pos.height,
                 };
@@ -185,7 +185,8 @@ void ui_element_update(ui_element_t* element) {
                 element->_real_pos = (rect_t){
                     parent->_real_pos.x + parent->_real_pos.width / 2 - element->pos.width / 2 +
                         element->pos.x,
-                    parent->_real_pos.y + element->pos.y,
+                    parent->_real_pos.y + parent->_real_pos.height - element->pos.height -
+                        element->pos.y,
                     element->pos.width,
                     element->pos.height,
                 };
@@ -194,8 +195,7 @@ void ui_element_update(ui_element_t* element) {
                 element->_real_pos = (rect_t){
                     parent->_real_pos.x + parent->_real_pos.width / 2 - element->pos.width / 2 +
                         element->pos.x,
-                    parent->_real_pos.y + parent->_real_pos.height - element->pos.height -
-                        element->pos.y,
+                    parent->_real_pos.y + element->pos.y,
                     element->pos.width,
                     element->pos.height,
                 };

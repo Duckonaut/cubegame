@@ -5,7 +5,7 @@ revision = head
 depth = 1
 method = cmake
 clone-recursive = true
-diff_files = glfw-opengl3.patch
+diff_files = cimgui-glfw-opengl3.patch
 
 [provide]
 cimgui = cimgui_dep

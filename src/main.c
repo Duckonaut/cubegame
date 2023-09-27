@@ -6,6 +6,12 @@
 #include <cglm/types.h>
 #include <cglm/vec3.h>
 
+#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
+#include <cimgui.h>
+#define CIMGUI_USE_GLFW
+#define CIMGUI_USE_OPENGL3
+#include <generator/output/cimgui_impl.h>
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -130,7 +136,7 @@ typedef struct args {
 } args_t;
 
 static args_t parse_args(int argc, char** argv) {
-    args_t args = {0};
+    args_t args = { 0 };
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--vsync") == 0) {
             args.vsync = true;
@@ -149,7 +155,7 @@ int main(int argc, char** argv) {
     if (!glfwInit())
         return -1;
 
-    // if wayland, force vsync
+        // if wayland, force vsync
 #ifdef __linux__
     if (getenv("WAYLAND_DISPLAY") != NULL) {
         args.vsync = true;
@@ -244,6 +250,17 @@ int main(int argc, char** argv) {
 
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+    LOG_INFO("Setting up ImGui\n");
+
+    igCreateContext(NULL);
+    ImGuiIO* io = igGetIO();
+    io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330 core");
+
+    igStyleColorsDark(NULL);
+
     LOG_INFO("Entering main loop\n");
 
     float frametimes[FRAMETIME_SAMPLES];
@@ -268,6 +285,15 @@ int main(int argc, char** argv) {
         shader_use(&g_game.content.ui_shader);
 
         game_draw_ui();
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        igNewFrame();
+
+        igShowDemoWindow(NULL);
+
+        igRender();
+        ImGui_ImplOpenGL3_RenderDrawData(igGetDrawData());
 
         if (args.vsync) {
             glfwSwapBuffers(window);

@@ -1,0 +1,20 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5012db3..73a358e 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -18,12 +18,14 @@ file(GLOB IMGUI_SOURCES
+     imgui/imgui_draw.cpp
+     imgui/imgui_demo.cpp
+     imgui/imgui_widgets.cpp
++    imgui/backends/imgui_impl_glfw.cpp
++    imgui/backends/imgui_impl_opengl3.cpp
+ 	${TABLES_SOURCE}
+ )
+ 
+ set(IMGUI_STATIC "no" CACHE STRING "Build as a static library")
+ set(IMGUI_FREETYPE "no" CACHE STRING "Build with freetype library")
+-set(IMGUI_LIBRARIES )
++set(IMGUI_LIBRARIES glfw)
+ 
+ if(IMGUI_FREETYPE)
+ 	FIND_PACKAGE(freetype REQUIRED PATHS ${FREETYPE_PATH})

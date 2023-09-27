@@ -24,11 +24,24 @@ endif
 glfw_dep = dependency('glfw3', required : true, static : static_link_libs)
 cglm_dep = dependency('cglm', required : true, static : static_link_libs)
 glew_dep = dependency('glew', required : true, static : static_link_libs)
+# cimgui is a cmake project
+cmake = import('cmake')
+cimgui_opt = cmake.subproject_options()
+cimgui_opt.add_cmake_defines({
+  'IMGUI_IMPL_GLFW': true,
+  'IMGUI_IMPL_OPENGL3': true
+})
+
+cimgui_proj = cmake.subproject('cimgui', options: cimgui_opt)
+# add OpenGL3 and GLFW support to cimgui flags
+
+cimgui_dep = cimgui_proj.dependency('cimgui')
 
 deps = [
   glfw_dep,
   cglm_dep,
   glew_dep,
+  cimgui_dep,
 ]
 if host_machine.system() == 'linux'
   m_dep = cc.find_library('m', required : true)

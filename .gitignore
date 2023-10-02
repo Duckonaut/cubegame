@@ -9,3 +9,4 @@ dist/
 subprojects/*/
 !subprojects/packagefiles/
 imgui.ini
+save.cgsv

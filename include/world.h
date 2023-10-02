@@ -73,6 +73,7 @@ void block_mesh_face(mesh_t* mesh, ivec3 position, block_face_t face, block_t* b
 
 typedef struct chunk {
     ivec3 position;
+    bool save_dirty;
     mesh_t mesh;
     block_t blocks[CHUNK_BLOCK_COUNT];
 } chunk_t;

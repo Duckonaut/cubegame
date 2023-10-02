@@ -1,5 +1,6 @@
 #include "world.h"
 
+#include "saves.h"
 #include "types.h"
 #include "assets.h"
 #include "glm_extra.h"
@@ -38,16 +39,38 @@ block_flags_t block_flags[BLOCK_ID_MAX] = {
 
 void chunk_init(chunk_t* chunk, world_t* world, ivec3 position) {
     glm_ivec3_copy(position, chunk->position);
-    for (int i = 0; i < CHUNK_SIZE; i++) {
-        chunk->blocks[i] = (block_t){ .id = BLOCK_AIR };
+    chunk->save_dirty = false;
+    bool is_new_chunk = true;
+
+    for (size_t i = 0; i < g_save->world.chunk_count; i++) {
+        world_save_chunk_t* save_chunk = &g_save->world.chunks[i];
+        if (position[0] == save_chunk->x && position[1] == save_chunk->y &&
+            position[2] == save_chunk->z) {
+            is_new_chunk = false;
+
+            for (size_t j = 0; j < CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE; j++) {
+                chunk->blocks[j].id = save_chunk->block_data[j];
+            }
+            break;
+        }
     }
+
+    if (is_new_chunk) {
+        for (int i = 0; i < CHUNK_SIZE; i++) {
+            chunk->blocks[i] = (block_t){ .id = BLOCK_AIR };
+        }
+        chunk_generate(chunk);
+    }
+
     chunk->mesh.vertices = NULL;
     chunk->mesh.indices = NULL;
 
-    chunk_generate(chunk);
     chunk_mesh(chunk, world);
 }
 void chunk_forget(chunk_t* chunk) {
+    if (g_save != NULL && chunk->save_dirty) {
+        save_add_chunk(g_save, chunk);
+    }
     chunk_forget_mesh(chunk);
     free(chunk->mesh.vertices);
     free(chunk->mesh.indices);
@@ -95,6 +118,7 @@ void chunk_generate(chunk_t* chunk) {
 void chunk_set_block(chunk_t* chunk, world_t* world, ivec3 position, block_id_t id) {
     i32 index = CHUNK_POS_TO_INDEX(position[0], position[1], position[2]);
     chunk->blocks[index].id = id;
+    chunk->save_dirty = true;
     world_remesh_queue_add(world, (u32)(chunk - world->chunks));
 }
 

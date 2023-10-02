@@ -366,16 +366,7 @@ void player_update(player_t* player) {
                     chunk_pos[1] = y;
                     chunk_pos[2] += z;
 
-                    chunk_t* c = world_get_or_load_chunk(g_game.world, chunk_pos);
-
-                    if (c) {
-                        LOG_DEBUG(
-                            "Loaded chunk %d %d %d\n",
-                            chunk_pos[0],
-                            chunk_pos[1],
-                            chunk_pos[2]
-                        );
-                    }
+                    world_get_or_load_chunk(g_game.world, chunk_pos);
                 }
             }
         }

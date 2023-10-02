@@ -45,9 +45,9 @@ dist: clean release
 
 [unix]
 run: build
-	./build/cubegame
+	./build/cubegame -s save.cgsv
 
 [windows]
 run: build
-	./build/cubegame.exe
+	./build/cubegame.exe -s save.cgsv
 

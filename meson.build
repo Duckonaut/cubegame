@@ -69,18 +69,19 @@ asset_data = custom_target(
 src = [
   'src/assets.c',
   'src/camera.c',
-  'src/globals.c',
-  'src/main.c',
-  'src/mesh.c',
-  'src/player.c',
-  'src/shader.c',
-  'src/world.c',
-  'src/physics.c',
-  'src/ui.c',
   'src/game.c',
-  'src/utils.c',
+  'src/globals.c',
   'src/lighting.c',
   'src/log.c',
+  'src/main.c',
+  'src/mesh.c',
+  'src/physics.c',
+  'src/player.c',
+  'src/saves.c',
+  'src/shader.c',
+  'src/ui.c',
+  'src/utils.c',
+  'src/world.c',
   asset_data
 ]
 

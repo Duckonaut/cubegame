@@ -1,3 +1,4 @@
+#include "saves.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <cglm/cglm.h>
@@ -147,14 +148,26 @@ static int float_compare(const void* a, const void* b) {
 }
 
 typedef struct args {
-    bool vsync; // -v, --vsync
+    bool vsync;      // -v, --vsync
+    char* save_path; // -s, --save
 } args_t;
 
 static args_t parse_args(int argc, char** argv) {
-    args_t args = { 0 };
+    args_t args = {
+        .vsync = false,
+        .save_path = NULL,
+    };
+
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--vsync") == 0) {
             args.vsync = true;
+        } else if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--save") == 0) {
+            if (i + 1 < argc) {
+                args.save_path = argv[i + 1];
+            } else {
+                LOG_ERROR("No save path specified\n");
+                exit(1);
+            }
         }
     }
 
@@ -163,6 +176,34 @@ static args_t parse_args(int argc, char** argv) {
 
 int main(int argc, char** argv) {
     args_t args = parse_args(argc, argv);
+
+    if (args.save_path == NULL) {
+        LOG_INFO("No save path specified, creating new save\n");
+        g_save = save_new();
+    } else {
+        g_save = save_load(args.save_path);
+
+        if (g_save == NULL) {
+            LOG_ERROR("Failed to load save %s\n", args.save_path);
+            // if we would overwrite the save, we should probably not do that
+            if (strcmp(args.save_path, "save.cgsv") == 0) {
+                LOG_ERROR("Not overwriting default save\n");
+                exit(1);
+            } else {
+                LOG_INFO("Creating new save\n");
+                g_save = save_new();
+            }
+        } else {
+            for (size_t i = 0; i < g_save->world.chunk_count; i++) {
+                LOG_INFO(
+                    "Loaded chunk %d %d %d\n",
+                    g_save->world.chunks[i].x,
+                    g_save->world.chunks[i].y,
+                    g_save->world.chunks[i].z
+                );
+            }
+        }
+    }
 
     GLFWwindow* window;
 
@@ -441,7 +482,20 @@ int main(int argc, char** argv) {
                 }
             }
         }
+
+        if (chunk->save_dirty) {
+            save_add_chunk(g_save, chunk);
+        }
     }
+
+    if (args.save_path != NULL) {
+        save_write(g_save, args.save_path);
+    } else {
+        save_write(g_save, "save.cgsv");
+    }
+
+    save_free(g_save);
+    g_save = NULL;
 
     game_free();
 

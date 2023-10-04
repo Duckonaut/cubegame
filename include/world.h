@@ -2,13 +2,13 @@
 
 #include "mesh.h"
 #include "types.h"
+#include "config.h"
 
 #include <cglm/types.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <stdbool.h>
 
-#define CHUNK_SIZE 16
 #define CHUNK_BLOCK_COUNT (CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE)
 
 #define BLOCK_AIR (block_id_t)0
@@ -63,17 +63,19 @@ extern block_flags_t block_flags[BLOCK_ID_MAX];
 
 typedef struct block {
     block_id_t id;
+    u8 light_level;
     u32 mesh_vertex_offset;
     u32 mesh_vertex_count;
     i32 mesh_index_offset;
     i32 mesh_index_count;
 } block_t;
 
-void block_mesh_face(mesh_t* mesh, ivec3 position, block_face_t face, block_t* block);
+void block_mesh_face(mesh_t* mesh, ivec3 position, u32 light_index, block_face_t face, block_t* block);
 
 typedef struct chunk {
     ivec3 position;
     bool save_dirty;
+    bool light_dirty;
     mesh_t mesh;
     block_t blocks[CHUNK_BLOCK_COUNT];
 } chunk_t;

@@ -26,12 +26,12 @@
 // clang-format off
 
 const vertex_t plain_axes_vertices[] = {
-    { { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
-    { { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
-    { { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
-    { { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
-    { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
-    { { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
+    { { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }, 0 },
+    { { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }, 0 },
+    { { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f }, 0 },
+    { { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f }, 0 },
+    { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f }, 0 },
+    { { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f }, 0 },
 };
 
 const u32 plain_axes_indices[] = {
@@ -40,15 +40,15 @@ const u32 plain_axes_indices[] = {
 
 const vertex_t cube_skeleton_vertices[] = {
     // Back
-    { { -0.505f, -0.505f, -0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
-    { {  0.505f, -0.505f, -0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
-    { { -0.505f,  0.505f, -0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
-    { {  0.505f,  0.505f, -0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+    { { -0.505f, -0.505f, -0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }, 0 },
+    { {  0.505f, -0.505f, -0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }, 0 },
+    { { -0.505f,  0.505f, -0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }, 0 },
+    { {  0.505f,  0.505f, -0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }, 0 },
     // Front
-    { { -0.505f, -0.505f, 0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
-    { {  0.505f, -0.505f, 0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
-    { { -0.505f,  0.505f, 0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
-    { {  0.505f,  0.505f, 0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+    { { -0.505f, -0.505f, 0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }, 0 },
+    { {  0.505f, -0.505f, 0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }, 0 },
+    { { -0.505f,  0.505f, 0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }, 0 },
+    { {  0.505f,  0.505f, 0.505f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }, 0 },
 };
 
 const u32 cube_skeleton_indices[] = {
@@ -59,35 +59,35 @@ const u32 cube_skeleton_indices[] = {
 
 const vertex_t cube_vertices[] = {
     // Back
-    { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BL(0, 0) },
-    { {  0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BR(0, 0) },
-    { { -0.5f,  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_TL(0, 0) },
-    { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_TR(0, 0) },
+    { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BL(0, 0), 0 },
+    { {  0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BR(0, 0), 0 },
+    { { -0.5f,  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_TL(0, 0), 0 },
+    { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_TR(0, 0), 0 },
     // Front
-    { { -0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_BL(0, 0) },
-    { {  0.5f, -0.5f,  0.5f }, { 1.0f, 0.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_BR(0, 0) },
-    { { -0.5f,  0.5f,  0.5f }, { 0.0f, 1.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_TL(0, 0) },
-    { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_TR(0, 0) },
+    { { -0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_BL(0, 0), 0 },
+    { {  0.5f, -0.5f,  0.5f }, { 1.0f, 0.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_BR(0, 0), 0 },
+    { { -0.5f,  0.5f,  0.5f }, { 0.0f, 1.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_TL(0, 0), 0 },
+    { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_TR(0, 0), 0 },
     // Left
-    { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BL(0, 0) },
-    { { -0.5f, -0.5f,  0.5f }, { 1.0f, 0.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_BR(0, 0) },
-    { { -0.5f,  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_TL(0, 0) },
-    { { -0.5f,  0.5f,  0.5f }, { 0.0f, 1.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_TR(0, 0) },
+    { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BL(0, 0), 0 },
+    { { -0.5f, -0.5f,  0.5f }, { 1.0f, 0.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_BR(0, 0), 0 },
+    { { -0.5f,  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_TL(0, 0), 0 },
+    { { -0.5f,  0.5f,  0.5f }, { 0.0f, 1.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_TR(0, 0), 0 },
     // Right
-    { {  0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BL(0, 0) },
-    { {  0.5f, -0.5f,  0.5f }, { 1.0f, 0.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_BR(0, 0) },
-    { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_TL(0, 0) },
-    { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_TR(0, 0) },
+    { {  0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BL(0, 0), 0 },
+    { {  0.5f, -0.5f,  0.5f }, { 1.0f, 0.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_BR(0, 0), 0 },
+    { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_TL(0, 0), 0 },
+    { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_TR(0, 0), 0 },
     // Bottom
-    { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BL(0, 0) },
-    { {  0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BR(0, 0) },
-    { { -0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_TL(0, 0) },
-    { {  0.5f, -0.5f,  0.5f }, { 1.0f, 0.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_TR(0, 0) },
+    { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BL(0, 0), 0 },
+    { {  0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BR(0, 0), 0 },
+    { { -0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_TL(0, 0), 0 },
+    { {  0.5f, -0.5f,  0.5f }, { 1.0f, 0.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_TR(0, 0), 0 },
     // Top
-    { { -0.5f,  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BL(0, 0) },
-    { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BR(0, 0) },
-    { { -0.5f,  0.5f,  0.5f }, { 0.0f, 1.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_TL(0, 0) },
-    { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_TR(0, 0) },
+    { { -0.5f,  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BL(0, 0), 0 },
+    { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 0.0f }, ATLAS_TEXTURE_SLOT_UV_BR(0, 0), 0 },
+    { { -0.5f,  0.5f,  0.5f }, { 0.0f, 1.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_TL(0, 0), 0 },
+    { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f }, ATLAS_TEXTURE_SLOT_UV_TR(0, 0), 0 },
 };
 
 // for GL_TRIANGLES
@@ -106,10 +106,10 @@ const u32 cube_indices[] = {
 };
 
 const vertex_t magic_plane_vertices[] = {
-    { { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f } },
-    { { 1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } },
-    { { 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f } },
-    { { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f } },
+    { { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f }, 0 },
+    { { 1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f }, 0 },
+    { { 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f }, 0 },
+    { { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f }, 0 },
 };
 
 const u32 magic_plane_indices[] = {

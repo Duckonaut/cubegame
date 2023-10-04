@@ -360,6 +360,21 @@ int main(int argc, char** argv) {
                 g_player.selected_block[1],
                 g_player.selected_block[2]
             );
+            block_t* selected_block = world_get_block_at(g_game.world, g_player.selected_block);
+
+            if (selected_block != NULL) {
+                igText("Selected block ID: %d", selected_block->id);
+                ivec3 chunk_pos = { 0 };
+                world_get_chunk_position(g_player.selected_block, chunk_pos);
+                chunk_t* chunk = world_get_chunk(g_game.world, chunk_pos);
+                u32 light_index =
+                    chunk->mesh.vertices[selected_block->mesh_vertex_offset].shadow_index;
+                igText("Selected block light index: %d", light_index);
+            } else {
+                igText("Selected block ID: NULL");
+                igText("Selected block light index: NULL");
+            }
+            igText("Remesh queue count: %zu", g_game.world->chunk_slot_remesh_queue_count);
             igText("FPS: %f", 1.0f / g_gametime.delta_time);
 
             igText("Frametimes:");

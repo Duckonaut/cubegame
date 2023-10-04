@@ -9,6 +9,7 @@
 #include "player.h"
 #include "shader.h"
 #include "utils.h"
+#include "config.h"
 
 #include <assert.h>
 #include <cglm/affine-pre.h>
@@ -217,6 +218,9 @@ void chunk_remesh_block(
     ivec3 block_pos = { 0 };
     glm_ivec3_copy(pos, block_pos);
 
+    u32 light_index = (u32)(block_pos[2] * CHUNK_SIZE * CHUNK_SIZE + block_pos[1] * CHUNK_SIZE +
+                            block_pos[0]);
+
     static ivec3 DIRECTION_OFFSETS[6] = {
         { -1, 0, 0 }, { 1, 0, 0 }, { 0, -1, 0 }, { 0, 1, 0 }, { 0, 0, -1 }, { 0, 0, 1 },
     };
@@ -235,7 +239,13 @@ void chunk_remesh_block(
                 chunk_t* neighbor = neighbor_chunks[i];
 
                 if (neighbor == NULL) {
-                    block_mesh_face(&chunk->mesh, block_pos, (block_face_t)i, block);
+                    block_mesh_face(
+                        &chunk->mesh,
+                        block_pos,
+                        light_index,
+                        (block_face_t)i,
+                        block
+                    );
                     continue;
                 }
 
@@ -251,17 +261,23 @@ void chunk_remesh_block(
 
                 if (neighbor_block->id == BLOCK_AIR ||
                     (block_flags[neighbor_block->id] & BLOCK_FLAG_TRANSPARENT)) {
-                    block_mesh_face(&chunk->mesh, block_pos, (block_face_t)i, block);
+                    block_mesh_face(
+                        &chunk->mesh,
+                        block_pos,
+                        light_index,
+                        (block_face_t)i,
+                        block
+                    );
                 }
             } else {
-                block_mesh_face(&chunk->mesh, block_pos, (block_face_t)i, block);
+                block_mesh_face(&chunk->mesh, block_pos, light_index, (block_face_t)i, block);
             }
             continue;
         }
 
         block_t* neighbor = chunk_get_block(chunk, neighbor_pos);
         if (neighbor->id == BLOCK_AIR || (block_flags[neighbor->id] & BLOCK_FLAG_TRANSPARENT)) {
-            block_mesh_face(&chunk->mesh, block_pos, (block_face_t)i, block);
+            block_mesh_face(&chunk->mesh, block_pos, light_index, (block_face_t)i, block);
         }
     }
 
@@ -269,10 +285,20 @@ void chunk_remesh_block(
     block->mesh_vertex_count = chunk->mesh.vertex_count - block->mesh_vertex_offset;
 }
 
-void block_mesh_face(mesh_t* mesh, ivec3 position, block_face_t face, block_t* block) {
+void block_mesh_face(
+    mesh_t* mesh,
+    ivec3 position,
+    u32 light_index,
+    block_face_t face,
+    block_t* block
+) {
     block_flags_t flags = block_flags[block->id];
 
     vertex_t vertices[4] = { 0 };
+
+    for (i32 i = 0; i < 4; i++) {
+        vertices[i].shadow_index = light_index;
+    }
 
     switch (face) {
         case BLOCK_FACE_LEFT:
@@ -463,6 +489,13 @@ void chunk_draw(chunk_t* chunk) {
 
     shader_set_mat4(&g_shader_current, "u_model", model);
 
+    u32 light_grid[512] = { 0 };
+    for (u32 i = 0; i < 512; i++) {
+        light_grid[i] = 0x13579BDF;
+    }
+
+    shader_set_uint_array(&g_shader_current, "u_grid_map", light_grid, 512);
+
     mesh_draw(&chunk->mesh);
 }
 
@@ -522,6 +555,12 @@ void world_free(world_t* world) {
 }
 
 void world_remesh_queue_add(world_t* world, u32 index) {
+    // check if already in queue
+    for (u32 i = 0; i < world->chunk_slot_remesh_queue_count; i++) {
+        if (world->chunk_slot_remesh_queue[i] == index) {
+            return;
+        }
+    }
     world->chunk_slot_remesh_queue[world->chunk_slot_remesh_queue_count++] = index;
     world_chunk_slot_set_unremeshed(world, index);
 }
@@ -536,11 +575,11 @@ void world_remesh_queue_process(world_t* world) {
         return;
     }
 
-    bool remeshed_something = false;
+    u32 remeshes = 0;
 
-    while (!remeshed_something) {
+    while (remeshes < CHUNK_REMESH_PER_FRAME) {
         if (world->chunk_slot_remesh_queue_count == 0) {
-            break;
+            return;
         }
         u32 remesh_index =
             world->chunk_slot_remesh_queue[world->chunk_slot_remesh_queue_count - 1];
@@ -557,8 +596,9 @@ void world_remesh_queue_process(world_t* world) {
 
         chunk_t* chunk = &world->chunks[remesh_index];
         chunk_remesh(chunk, world);
-        world_chunk_slot_is_remeshed(world, remesh_index);
-        remeshed_something = true;
+        world_chunk_slot_set_remeshed(world, remesh_index);
+        world->chunk_slot_remesh_queue_count--;
+        remeshes++;
     }
 }
 

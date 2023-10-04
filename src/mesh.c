@@ -43,6 +43,15 @@ void mesh_init(mesh_t* mesh) {
         (void*)offsetof(vertex_t, uv)
     );
 
+    glEnableVertexAttribArray(3);
+    glVertexAttribIPointer(
+        3,
+        1,
+        GL_UNSIGNED_INT,
+        sizeof(vertex_t),
+        (void*)offsetof(vertex_t, shadow_index)
+    );
+
     glBindVertexArray(0);
 }
 

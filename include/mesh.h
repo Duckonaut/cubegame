@@ -9,6 +9,7 @@ typedef struct vertex {
     vec3 position;
     vec3 normal;
     vec2 uv;
+    u32 shadow_index;
 } vertex_t;
 
 typedef struct mesh {

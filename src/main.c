@@ -258,7 +258,7 @@ int main(int argc, char** argv) {
 
     LOG_INFO("Context made current\n");
 
-    GLenum err = glewInit();
+    GLenum err = glewContextInit();
     if (err != GLEW_OK) {
         LOG_ERROR("Failed to initialize GLEW: %s\n", glewGetErrorString(err));
         return -1;

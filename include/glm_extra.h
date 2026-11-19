@@ -2,6 +2,7 @@
 
 #include <cglm/types.h>
 #include <stdbool.h>
+
 #define VEC3_ZERO                                                                              \
     (vec3) {                                                                                   \
         0.0f, 0.0f, 0.0f                                                                       \
@@ -84,4 +85,10 @@
 
 static inline bool glme_ivec3_eq(ivec3 a, ivec3 b) {
     return a[0] == b[0] && a[1] == b[1] && a[2] == b[2];
+}
+
+static inline void glme_ivec3_divs(ivec3 a, int s, ivec3 dest) {
+    dest[0] = a[0] / s;
+    dest[1] = a[1] / s;
+    dest[2] = a[2] / s;
 }

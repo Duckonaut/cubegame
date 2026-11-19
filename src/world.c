@@ -12,7 +12,7 @@
 #include "config.h"
 
 #include <assert.h>
-#include <cglm/affine-pre.h>
+#include <cglm/affine.h>
 #include <cglm/ivec3.h>
 #include <cglm/mat4.h>
 #include <cglm/types.h>
@@ -135,6 +135,7 @@ block_t* chunk_get_block(chunk_t* chunk, ivec3 position) {
 }
 
 void chunk_mesh(chunk_t* chunk, world_t* world) {
+    chunk_light(chunk, world);
     if (!chunk->mesh.vertices) {
         chunk->mesh.vertices =
             malloc(sizeof(vertex_t) * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 4);
@@ -184,6 +185,148 @@ void chunk_mesh(chunk_t* chunk, world_t* world) {
     chunk->mesh.draw_mode = GL_TRIANGLES;
 
     mesh_init(&chunk->mesh);
+}
+
+inline static void chunk_set_light(chunk_t* chunk, u32 x, u32 y, u32 z, u8 light_level) {
+    u32 light_packed_index = (x + y * CHUNK_SIZE + z * CHUNK_SIZE * CHUNK_SIZE) / 8;
+    u32 light = chunk->light_levels[light_packed_index];
+
+    u32 index = x % 8u;
+
+    light &= ~(0xFu << (index * 4u));
+
+    light |= (light_level & 0xFu) << (index * 4u);
+
+    chunk->light_levels[light_packed_index] = light;
+}
+
+inline static u8 chunk_get_light(chunk_t* chunk, u32 x, u32 y, u32 z) {
+    u32 light_packed_index = (x + y * CHUNK_SIZE + z * CHUNK_SIZE * CHUNK_SIZE) / 8;
+    u32 light = chunk->light_levels[light_packed_index];
+
+    u32 index = x % 8u;
+
+    return (u8)((light >> (index * 4u)) & 0xFu);
+}
+
+void chunk_light(chunk_t* chunk, world_t* world) {
+    for (i32 z = 0; z < CHUNK_SIZE; z++) {
+        for (i32 y = 0; y < CHUNK_SIZE; y++) {
+            for (i32 x = 0; x < CHUNK_SIZE; x++) {
+                if (chunk->blocks[CHUNK_POS_TO_INDEX(x, y, z)].id == 4) {
+                    chunk_light_flood(chunk, world, x, y, z, 15);
+                }
+            }
+        }
+    }
+}
+
+// Flood-fill light, dropping level by 1 each step taken
+// Uses a queue to avoid recursion
+void chunk_light_flood(chunk_t* chunk, world_t* world, i32 x, i32 y, i32 z, u8 light_level) {
+    (void)world; // unused
+    ivec3 pos = { x, y, z };
+    typedef struct {
+        ivec3 pos;
+        u8 light_level;
+    } llp_t;
+    llp_t queue[CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE]; // max possible size
+    u32 queue_count = 0;
+    queue[queue_count++] = (llp_t){ { pos[0], pos[1], pos[2] }, light_level };
+    bool first_iteration = true;
+
+    while (queue_count != 0) {
+        // Pop from queue
+        llp_t llp = queue[0];
+        queue_count--;
+        memmove(queue, queue + 1, sizeof(llp_t) * queue_count);
+        pos[0] = llp.pos[0];
+        pos[1] = llp.pos[1];
+        pos[2] = llp.pos[2];
+        light_level = llp.light_level;
+
+        block_t* block = NULL;
+
+        // Set light level (if in chunk)
+        if (pos[0] >= 0 && pos[0] < CHUNK_SIZE && pos[1] >= 0 && pos[1] < CHUNK_SIZE &&
+            pos[2] >= 0 && pos[2] < CHUNK_SIZE) {
+            block = chunk_get_block(chunk, pos);
+            u8 current_light_level =
+                chunk_get_light(chunk, (u32)pos[0], (u32)pos[1], (u32)pos[2]);
+            if (current_light_level < light_level) {
+                chunk_set_light(chunk, (u32)pos[0], (u32)pos[1], (u32)pos[2], light_level);
+            } else {
+                continue;
+            }
+        } else {
+            // get that chunk
+            ivec3 chunk_pos = { 0 };
+            ivec3 neighbor_pos_in_chunk = { 0 };
+            glm_ivec3_copy(chunk->position, chunk_pos);
+            glm_ivec3_scale(chunk_pos, CHUNK_SIZE, chunk_pos);
+            glm_ivec3_add(chunk_pos, pos, chunk_pos);
+            world_get_position_in_chunk(chunk_pos, neighbor_pos_in_chunk);
+
+            glme_ivec3_divs(chunk_pos, CHUNK_SIZE, chunk_pos);
+
+            chunk_t* neighbor_chunk = world_get_chunk(world, chunk_pos);
+
+            if (neighbor_chunk == NULL) {
+                continue;
+            }
+
+            block = chunk_get_block(neighbor_chunk, neighbor_pos_in_chunk);
+
+            u8 current_light_level = chunk_get_light(
+                neighbor_chunk,
+                (u32)neighbor_pos_in_chunk[0],
+                (u32)neighbor_pos_in_chunk[1],
+                (u32)neighbor_pos_in_chunk[2]
+            );
+
+            if (current_light_level < light_level) {
+                chunk_set_light(
+                    neighbor_chunk,
+                    (u32)neighbor_pos_in_chunk[0],
+                    (u32)neighbor_pos_in_chunk[1],
+                    (u32)neighbor_pos_in_chunk[2],
+                    light_level
+                );
+            } else {
+                continue;
+            }
+        }
+
+        // if not transparent, don't add neighbors
+        block_flags_t flags = block_flags[block->id];
+        if (!(flags & BLOCK_FLAG_TRANSPARENT) && !first_iteration) {
+            continue;
+        }
+        first_iteration = false;
+
+        // Add neighbors to queue
+        const ivec3 neighbor_offsets[6] = { { -1, 0, 0 }, { 1, 0, 0 }, { 0, 1, 0 },
+                                            { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 } };
+
+        ivec3 neighbor_pos = { 0 };
+        u8 new_light_level = light_level - 1;
+
+        for (i32 i = 0; i < 6; i++) {
+            glm_ivec3_add(pos, (int*)neighbor_offsets[i], neighbor_pos);
+
+            if (!array_any_member_eq(
+                    queue,
+                    queue_count,
+                    sizeof(llp_t),
+                    neighbor_pos,
+                    offsetof(llp_t, pos),
+                    sizeof(ivec3)
+                )) {
+                queue[queue_count++] = (llp_t
+                ){ { neighbor_pos[0], neighbor_pos[1], neighbor_pos[2] }, new_light_level };
+            }
+        }
+    }
 }
 
 void chunk_forget_mesh(chunk_t* chunk) {
@@ -481,7 +624,7 @@ void chunk_draw(chunk_t* chunk) {
     mat4 model = { 0 };
     glm_mat4_identity(model);
     glm_translate(
-        model,
+       model,
         (vec3){ (float)chunk->position[0] * CHUNK_SIZE,
                 (float)chunk->position[1] * CHUNK_SIZE,
                 (float)chunk->position[2] * CHUNK_SIZE }
@@ -489,12 +632,7 @@ void chunk_draw(chunk_t* chunk) {
 
     shader_set_mat4(&g_shader_current, "u_model", model);
 
-    u32 light_grid[512] = { 0 };
-    for (u32 i = 0; i < 512; i++) {
-        light_grid[i] = 0x13579BDF;
-    }
-
-    shader_set_uint_array(&g_shader_current, "u_grid_map", light_grid, 512);
+    shader_set_uint_array(&g_shader_current, "u_grid_map", chunk->light_levels, 512);
 
     mesh_draw(&chunk->mesh);
 }

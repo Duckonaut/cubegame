@@ -78,6 +78,7 @@ typedef struct chunk {
     bool light_dirty;
     mesh_t mesh;
     block_t blocks[CHUNK_BLOCK_COUNT];
+    u32 light_levels[CHUNK_BLOCK_COUNT / 8];
 } chunk_t;
 
 #define MAX_LOADED_CHUNKS 1024
@@ -117,6 +118,8 @@ void chunk_remesh_block(
     chunk_t* neighbor_chunks[6],
     ivec3 position
 );
+void chunk_light(chunk_t* chunk, world_t* world);
+void chunk_light_flood(chunk_t* chunk, world_t* world, i32 x, i32 y, i32 z, u8 light_level);
 
 // Destroy a chunk's mesh in place, freeing all memory associated with it
 // Does not free the chunk itself or its blocks
